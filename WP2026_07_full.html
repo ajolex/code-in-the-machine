@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code in the Machine: Can Large Language Models Reproduce Econometric Analyses?</title>
+    <meta name="description" content="Working paper examining whether AI agents can reproduce published econometric analyses from methodology descriptions alone.">
+    <meta name="author" content="Aubrey Jolex">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Code in the Machine: Can LLMs Reproduce Econometric Analyses?">
+    <meta property="og:description" content="We test whether AI agents can replicate published econometric analyses from methodology text alone.">
+    <meta property="og:type" content="article">
+    
+    <!-- MathJax for equations -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        :root {
+            --primary: #1a1a2e;
+            --accent: #2563eb;
+            --text: #333;
+            --light-bg: #f8fafc;
+            --border: #e2e8f0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.8;
+            color: var(--text);
+            background: white;
+            max-width: 8.5in;
+            margin: 0 auto;
+            padding: 1in;
+        }
+        
+        /* Title Page */
+        .title-page {
+            text-align: center;
+            padding: 2em 0 3em;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2em;
+        }
+        
+        .title-page h1 {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 1.5em;
+            line-height: 1.3;
+        }
+        
+        .author {
+            font-size: 1.1em;
+            margin-bottom: 0.3em;
+        }
+        
+        .affiliation {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 1em;
+        }
+        
+        .date {
+            color: #666;
+            margin-bottom: 2em;
+        }
+        
+        /* Abstract */
+        .abstract {
+            background: var(--light-bg);
+            padding: 1.5em;
+            margin: 2em 0;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .abstract h2 {
+            font-size: 1em;
+            margin-bottom: 0.5em;
+        }
+        
+        .abstract p {
+            text-align: justify;
+            font-size: 0.95em;
+        }
+        
+        .keywords, .jel {
+            font-size: 0.9em;
+            margin: 0.5em 0;
+        }
+        
+        /* Sections */
+        h2 {
+            font-size: 1.3em;
+            margin: 2em 0 1em;
+            padding-bottom: 0.3em;
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        h3 {
+            font-size: 1.1em;
+            margin: 1.5em 0 0.8em;
+        }
+        
+        h4 {
+            font-size: 1em;
+            margin: 1.2em 0 0.6em;
+        }
+        
+        p {
+            text-align: justify;
+            margin-bottom: 1em;
+            text-indent: 1.5em;
+        }
+        
+        p:first-of-type, .no-indent {
+            text-indent: 0;
+        }
+        
+        /* Tables */
+        .table-container {
+            margin: 2em 0;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+            margin: 1em 0;
+        }
+        
+        caption {
+            font-weight: bold;
+            text-align: left;
+            margin-bottom: 0.5em;
+            font-size: 1em;
+        }
+        
+        th, td {
+            padding: 0.5em 0.8em;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            border-top: 2px solid var(--primary);
+            border-bottom: 2px solid var(--primary);
+            font-weight: bold;
+        }
+        
+        tbody tr:last-child td {
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        .table-notes {
+            font-size: 0.85em;
+            font-style: italic;
+            margin-top: 0.5em;
+            color: #555;
+        }
+        
+        /* Figures */
+        .figure {
+            margin: 2em 0;
+            text-align: center;
+        }
+        
+        .figure img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .figure-caption {
+            font-size: 0.9em;
+            margin-top: 0.5em;
+            text-align: left;
+        }
+        
+        .figure-notes {
+            font-size: 0.85em;
+            font-style: italic;
+            margin-top: 0.5em;
+            color: #555;
+            text-align: left;
+        }
+        
+        /* Citations */
+        .citation {
+            color: var(--accent);
+        }
+        
+        /* References */
+        .references {
+            font-size: 0.95em;
+        }
+        
+        .references p {
+            text-indent: -1.5em;
+            padding-left: 1.5em;
+            margin-bottom: 0.8em;
+        }
+        
+        /* Footnotes */
+        .footnote {
+            font-size: 0.85em;
+            vertical-align: super;
+        }
+        
+        /* Navigation */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 0.9em;
+        }
+        
+        .nav-bar a:hover {
+            text-decoration: underline;
+        }
+        
+        body {
+            margin-top: 50px;
+        }
+        
+        /* Print styles */
+        @media print {
+            .nav-bar { display: none; }
+            body { margin-top: 0; padding: 0.5in; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+                font-size: 11pt;
+            }
+            
+            .title-page h1 {
+                font-size: 1.4em;
+            }
+            
+            table {
+                font-size: 0.8em;
+            }
+        }
+        
+        /* Code blocks */
+        code {
+            font-family: 'Courier New', monospace;
+            background: #f4f4f4;
+            padding: 0.1em 0.3em;
+            font-size: 0.9em;
+        }
+        
+        /* Highlight box */
+        .highlight-box {
+            background: #fff8dc;
+            border: 1px solid #daa520;
+            padding: 1em;
+            margin: 1em 0;
+        }
+        
+        /* Two-column for figure positioning text */
+        .matrix-description {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1em;
+            margin: 1em 0;
+            font-size: 0.9em;
+        }
+        
+        .matrix-cell {
+            padding: 1em;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        
+        .matrix-cell.highlight {
+            background: #fffacd;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar">
+        <span><strong>Working Paper</strong></span>
+        <div>
+            <a href="#abstract">Abstract</a>
+            <a href="#introduction">Introduction</a>
+            <a href="#results">Results</a>
+            <a href="#conclusion">Conclusion</a>
+            <a href="#references">References</a>
+        </div>
+    </nav>
+
+    <!-- Title Page -->
+    <div class="title-page">
+        <h1>Code in the Machine: Can Large Language Models Reproduce Econometric Analyses?</h1>
+        
+        <p class="author">Aubrey Jolex*</p>
+        <p class="affiliation">Innovations for Poverty Action</p>
+        <p class="date">January 28, 2026</p>
+    </div>
+    
+    <!-- Abstract -->
+    <div class="abstract" id="abstract">
+        <h2>Abstract</h2>
+        <p>We test whether AI agents can replicate published econometric analyses from methodology text alone. Three models—GPT Codex, Claude Opus, and Gemini Pro—attempted to reproduce 13 J-PAL randomized trials using only methodology descriptions and raw data. Under standard prompts, execution rates varied (Codex 100%, Opus 85%, Gemini 77%) with volatile coefficient accuracy. Exhaustive variable-level specifications prompts closed the gap: all models achieved 100% execution, and Gemini achieved median drift of just 0.19 SE with 100% of estimates within 1.0 SE of published values. Divergences traced to prompt ambiguity (47%) and best-practice defaults (31%), not hallucinations (8%). We conclude that AI agents can aid replication when paired with structured prompts and validation protocols.</p>
+    </div>
+    
+    <p class="keywords"><strong>Keywords:</strong> AI Agents, Large Language Models, Reproducibility, Replication, Econometrics, Development Economics, Code Generation</p>
+    
+    <p class="jel"><strong>JEL Codes:</strong> C18, C88, O12, A14</p>
+    
+    <!-- Section 1: Introduction -->
+    <h2 id="introduction">1. Introduction</h2>
+    
+    <p class="no-indent">The replication crisis in economics is well-documented. Chang and Li (2015) found that only 33% of economics papers could be replicated without author assistance, while Camerer et al. (2016) reported a 61% replication rate (significant effect in the same direction as the original study) for laboratory experiments. More recently, Brodeur et al. (2024) found that while 85% of papers were computationally reproducible, 25% contained coding errors and robustness checks reduced effect sizes by 52% on average. These findings raise fundamental questions about the reliability of published scientific research.</p>
+    
+    <p>These persistent difficulties in replication stem in part from the complexity and opacity of modern empirical workflows. The growing use of large language models (LLMs) in empirical research may exacerbate, rather than resolve, these concerns. LLMs can now generate statistical code, translate methodological descriptions into executable analyses, and automate complex empirical workflows (Noy and Zhang, 2023; Korinek, 2025). By delegating core analytical tasks to probabilistic systems whose internal logic is not fully transparent, researchers risk introducing new sources of error that are difficult to detect using existing replication norms. When analytical pipelines are mediated by AI-generated code rather than fully human-authored programs, traditional notions of replication and transparency may no longer suffice. This shift raises a critical question: <strong>How can we verify and evaluate the reliability of econometric analyses produced with LLM assistance?</strong></p>
+    
+    <p>This question has direct implications for transparency and accountability in the age of AI. First, LLMs may lower the apparent cost of analysis while increasing the risk of undetected mistakes, particularly in the form of "silent logic errors"—code that executes without error but implements an incorrect model or statistic. Unlike conventional coding errors, which often require author assistance to diagnose, such errors may evade both peer review and standard replication attempts. Second, the widespread adoption of LLM-assisted workflows could scale these risks across the literature, potentially propagating systematic errors at a speed and scale that exceeds human-only research processes. Only under strict verification protocols could LLMs plausibly deliver offsetting benefits, such as lowering barriers to replication and enabling broader participation in research auditing. As Hamermesh (2007) observed, economists have traditionally treated replication as an ideal rather than a practice; without new safeguards, AI may further widen this gap rather than close it.</p>
+    
+    <p>We address this question through a systematic audit of three frontier AI agents—GPT 5.1 Codex, Claude Opus 4.5, and Gemini 3 Pro, accessed via GitHub Copilot—attempting to replicate 13 randomized controlled trials (RCTs) from the J-PAL Dataverse. Our experimental design isolates AI capability from other factors: we provide standardized methodology prompts extracted from published papers, grant full access to replication datasets, but withhold original analysis code. This setup tests whether AI agents can implement a statistical analysis "from scratch" given only a description of methods.</p>
+    
+    <p>Our findings are nuanced. Under initial methodology-level prompts, all three models achieved high computational reproducibility: GPT Codex completed 100% of papers, Claude Opus 85%, and Gemini Pro 77%. However, coefficient accuracy varied—Codex achieved near-perfect matches (within 0.05 SE) for 22% of outcomes, notably replicating the India Maternal Literacy RCT with coefficients of 0.0351 versus the published 0.035. An experimental manipulation with exhaustive variable-level prompts revealed two striking results: first, detailed specifications closed the execution gap entirely, with all three models achieving 100% success; second, coefficient accuracy improved dramatically, with Gemini achieving median drift of just 0.19 SE and 100% of estimates within 1.0 SE—outperforming both Codex and Opus under the same detailed conditions. Divergences traced primarily to prompt ambiguity (47%) and best-practice defaults (31%) rather than hallucinations (8%).</p>
+    
+    <p>We make three contributions to transparency and verification in AI-assisted research. First, we provide the first systematic audit of AI agent replication capabilities in economics, establishing baselines for verification and accountability of AI-generated analyses. Testing multiple models on identical tasks reveals the "jagged frontier" of AI capability—areas where verification is essential versus where automation is reliable. Second, we develop a taxonomy of failure modes—hallucinations, misinterpretations, and best-practice deviations—that clarifies the explainability challenges specific to AI-generated econometric code. This taxonomy provides a framework for auditing AI-generated analyses and identifying when human oversight is critical. Third, we derive practical recommendations for methodology documentation standards that improve reproducibility for both human and machine replicators, addressing institutional and technical barriers to transparency in an era where AI tools are increasingly embedded in research workflows.</p>
+    
+    <p>Our findings reveal that AI agents are neither silver bullets nor reckless saboteurs; their value depends on the structure embedded in prompts, the availability of validation checks, and researchers' willingness to interrogate generated code. In that respect, our exercise complements the productivity experiments of Noy and Zhang (2023) and the conceptual framing of Korinek (2023), but extends both by examining end-to-end replication of causal inference designs rather than discrete programming tasks. A key methodological insight emerges: reproducibility failures trace back to mundane implementation details such as naming conventions, scale transformations, and sample filters. AI agents amplify these issues because they dutifully implement whichever plausible interpretation the prompt permits, making structured documentation and runtime validation essential.</p>
+    
+    <p>The stakes extend beyond academic housekeeping. As AI tools diffuse across universities, policy institutions, and consulting firms, the quality of prompts and validation protocols will determine whether automated replication becomes a democratizing force or a new source of specification drift. Our evidence suggests a path forward: structured documentation that makes identification logic explicit, runtime checks that catch implausible estimates before they circulate, and prompt-governance norms that treat instructions as first-class research objects. If the profession adopts these practices, AI agents can materially expand the scope and speed of credible empirical work. If not, we risk automating the garden of forking paths at scale.</p>
+    
+    <p>The remainder of the paper proceeds as follows. Section 2 reviews the literature on replication failures, AI code generation, and transparency standards, situating our work within ongoing debates about automation and verification. Section 3 describes the 13 J-PAL randomized evaluations that comprise our benchmark, detailing selection criteria and key features. Section 4 outlines our experimental design, including prompt construction protocols, agent configurations, and evaluation metrics. Section 5 presents the main findings on computational reproducibility, coefficient accuracy, and failure modes. Section 6 discusses implications for research workflows, documentation standards, and AI governance, while Section 7 concludes with practical recommendations for integrating AI agents into replication and research pipelines.</p>
+    
+    <!-- Section 2: Literature Review -->
+    <h2>2. Literature Review</h2>
+    
+    <p class="no-indent">The credibility literature has already established the stakes. Studies by Christensen and Miguel (2018), Brodeur et al. (2016), and Camerer et al. (2016) document publication bias, p-hacking, and low replication rates; Chang and Li (2015) famously reproduced only 51 percent of macro papers even with author help. More recent audits show limited progress despite data mandates (Herbert et al., 2021; Vilhuber, 2020), and the Institute for Replication's mass exercises (Brodeur et al., 2024) confirm that specification choices can halve effect sizes. If access to files is no longer the bottleneck, the remaining question is whether published methodology text contains enough detail for independent analysts—human or machine—to reconstruct the estimation logic.</p>
+    
+    <p>This concern maps directly onto the "garden of forking paths" problem (Huntington-Klein et al., 2021). Even conscientious researchers make divergent decisions about variable construction, clustering, or sample restrictions. Pre-analysis plans help but raise concerns about rigidity (Coffman and Niederle, 2015), while sensitivity frameworks such as Cinelli and Hazlett (2020) show how fragile many estimates remain. AI-generated code could become a middle ground: it can expose undocumented forks quickly, yet it also risks multiplying silent mistakes if prompts lack precision.</p>
+    
+    <p>Economists increasingly view AI as a "third co-author" (Korinek, 2023). Experiments show that language models already mimic economic reasoning (Horton, 2023), boost productivity (Noy and Zhang, 2023), and operate along a jagged capability frontier (Dell'Acqua et al., 2023). Software engineers warn that the main danger is not syntax errors but silent logic errors (IEEE, 2025), motivating tools such as RepoAudit (2025) and data-cleaning agents (Zhang et al., 2025). These insights imply that econometric workflows must emphasize prompt clarity and runtime validation rather than blind trust in fluent code.</p>
+    
+    <p>Our paper contributes to this conversation in three ways. First, we revisit the replication crisis literature through the lens of automation. Classic literature such as Hamermesh (2007) framed replication as a public good problem with weak rewards and high opportunity costs. We show that LLM agents change the cost curve but do not remove the informational asymmetry: unless methodology sections include machine-readable detail, agents simply formalize the same forks that human replicators confront. Second, we connect the transparency movement (Christensen and Miguel, 2018; Vilhuber, 2020) to concrete tooling requirements. The reason transparency policies have plateaued is that "available" files are not synonymous with "understandable" logic. Our prompt treatments operationalize the level of structure needed for both humans and machines to succeed, thereby extending the data-availability conversation toward instruction-availability.</p>
+    
+    <p>Third, we bridge the AI governance literature with practical econometric needs. Spirling et al. (2025) argue that stochastic language-model outputs complicate traditional definitions of replication, yet their remedy emphasizes process documentation. Our findings echo that prescription: the most reliable way to harness LLMs is to log prompts, runtime checks, and resolution steps so that downstream users can audit the full chain of reasoning. At the same time, the jagged frontier documented by Dell'Acqua et al. (2023) predicts that capabilities will improve unevenly across tasks. We therefore catalogue which elements of development economics replications (e.g., clustered OLS) already cross the automation threshold and which (e.g., subgroup ANCOVA or IV) still require bespoke oversight.</p>
+    
+    <!-- Figure 1: 2x2 Matrix -->
+    <div class="figure">
+        <p><strong>Figure 1: Positioning our contribution within AI code-generation research</strong></p>
+        <div class="matrix-description">
+            <div class="matrix-cell"><strong>Simple Syntax</strong><br>Human-in-Loop<br><em>AI assistance</em></div>
+            <div class="matrix-cell"><strong>Complex Causal Logic</strong><br>Human-in-Loop<br><em>Traditional replication</em></div>
+            <div class="matrix-cell"><strong>Simple Syntax</strong><br>Fully Autonomous<br><em>Benchmarks (HumanEval)</em></div>
+            <div class="matrix-cell highlight"><strong>Complex Causal Logic</strong><br>Fully Autonomous<br><em>This paper</em></div>
+        </div>
+        <p class="figure-notes"><em>Notes:</em> Prior work studies either simple syntax tasks or human-in-the-loop causal inference. We benchmark fully autonomous causal logic.</p>
+    </div>
+    
+    <!-- Section 3: Research Sample -->
+    <h2>3. The Research Sample: 13 Randomized Evaluations</h2>
+    
+    <p class="no-indent">We selected thirteen J-PAL randomized evaluations because they mirror the everyday workload of development economists: multi-arm interventions, clustered standard errors, attrition adjustments, and occasional nonlinear models. The portfolio covers public health (COVID-19 behavior campaigns in China, HIV curricula in Kenya and Cameroon, Zambian water purification pricing), private-sector interventions (Mexican SME consulting, South African credit enforcement), governance reforms (Indonesian corruption audits, Pakistani tax incentives), and education programs (Indian maternal literacy, Canadian achievement awards). Sample sizes range from 245 loans to 150,000 patient encounters, and every study ships with publicly accessible replication packages.</p>
+    
+    <p>Rather than reproduce each narrative in detail, we highlight the features most relevant for testing AI agents. Some designs depend on simple OLS with clustered errors (Indonesia corruption case study), others require binary or count models (Kenya HSV-2 prevention, U.S. physician messaging), and several hinge on intricate sample filters or subgroup splits (Canadian second-year males, maternal literacy ANCOVA with baseline controls). Appendix A lists the full study roster. The breadth of contexts ensures that our benchmark probes the same specification decisions—outcome choice, fixed effects, clustering, and transformations—that routinely derail human replications.</p>
+    
+    <p>Two practical considerations shaped the final paper selection. First, each replication archive had to be fully self-contained so that an AI agent operating inside a VS Code workspace could ingest the raw data without manual preprocessing. We therefore excluded otherwise-relevant studies whose replication materials depended on proprietary modules, missing dictionaries, or bespoke operating-system configurations. Second, we prioritized studies with rich methodological prose. Papers that simply restated regression equations without describing variable construction offer little fodder for prompt engineering; conversely, narratives that spelled out treatment definitions, balance checks, and attrition rules allowed us to craft prompts that mimic a careful reader's notes.</p>
+    
+    <!-- Section 4: Methods -->
+    <h2>4. Experimental Design and Methods</h2>
+    
+    <h3>4.1 Study selection and preprocessing</h3>
+    
+    <p class="no-indent">We filtered the J-PAL Dataverse for randomized evaluations that met four practical constraints: open replication packages, standard econometric estimators (OLS/logit/Poisson rather than bespoke structural models), methodology text rich enough to build prompts, and complete data files. For each study we inspected the package, documented file relationships, and ensured that any replication failure would reflect AI capability rather than missing inputs.</p>
+    
+    <p>Preprocessing followed a standardized and repeatable workflow. All archives were cloned into a uniform directory structure, and file integrity was verified against the corresponding Dataverse records. When archives contained multiple study arms or auxiliary appendices, readme stubs were created to map filenames to the tables described in the publications. These procedures reflect the minimal preparation a human replicator would typically undertake prior to coding, thereby ensuring that the experiment isolates the translation from prose to estimation rather than extensive forensic data cleaning.</p>
+    
+    <h3>4.2 Prompt construction</h3>
+    
+    <p class="no-indent">Baseline prompts paraphrased the published methodology: research question, treatment definitions, target tables, outcome descriptions, control sets, fixed effects, sample restrictions, and clustering levels. We intentionally mirrored real papers by leaving vagueness where authors did. No original code snippets were provided. The second detailed-prompt treatment rewrote the same instructions with exhaustive specificity—verbatim variable names, missing-data flags, transformation rules, and logical operators for every filter—so we could observe whether "more detail" alone solved replication gaps.</p>
+    
+    <p>To minimize experimenter degrees of freedom, we drafted prompt templates before examining any model output. Each template contains four blocks: (i) a high-level goal statement, (ii) data management instructions, (iii) estimation requirements, and (iv) reporting expectations. Within each block we substituted study-specific text while preserving the scaffolding. The exhaustive prompts added a fifth block containing literal variable dictionaries and sample logic expressed in pseudo-code. This design allows us to attribute performance differences to the content of the instructions rather than to ad hoc stylistic changes.</p>
+    
+    <h3>4.3 Agent configuration</h3>
+    
+    <p class="no-indent">All experiments ran through GitHub Copilot's agent routing system via Visual Studio Code. Each of the three models—GPT 5.1 Codex, Claude Opus 4.5, and Gemini 3 Pro—was tested in a dedicated workspace to ensure independence and reproducibility. Agents received identical prompts, had access to Stata 18.5 or R 4.5 depending on the replication archive, and could iterate after runtime errors. We logged iteration counts, execution time, and final code. Agents worked independently; no model saw another's output. Behavioral differences emerged organically: Codex favored extensive diagnostics, Claude prioritized concise scripts, and Gemini persevered through repeated debugging.</p>
+    
+    <h3>4.4 Evaluation and diagnostics</h3>
+    
+    <p class="no-indent">Replication quality is measured via coefficient drift, the absolute difference between AI and published coefficients divided by the published standard error. We classify drift into perfect (&lt;0.05 SE), minor (0.05–0.20), moderate (0.20–0.50), substantial (0.50–1.0), and major (≥1.0) categories to separate cosmetic differences from consequential deviations. After every divergent estimate we compared AI code to author scripts (when available) and assigned root causes to four buckets: hallucination, misinterpretation, best-practice default, or data mismatch. These diagnostics underpin the failure taxonomy reported later.</p>
+    
+    <!-- Section 5: Results -->
+    <h2 id="results">5. Results</h2>
+    
+    <h3>5.1 Detailed prompts close the execution gap</h3>
+    
+    <p class="no-indent">Exhaustive instructions were not a silver bullet. Table 1 reveals a striking non-monotonic relationship: providing variable-level specifications improved Opus and Gemini but collapsed Codex's performance entirely.</p>
+    
+    <!-- Table 1 -->
+    <div class="table-container">
+        <table>
+            <caption>Table 1: Initial vs. Detailed Prompt Performance</caption>
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th colspan="2">Execution Success</th>
+                    <th colspan="2">Perfect Matches</th>
+                </tr>
+                <tr>
+                    <th></th>
+                    <th>Initial</th>
+                    <th>Detailed</th>
+                    <th>Initial</th>
+                    <th>Detailed</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>GPT 5.1 Codex</td>
+                    <td>13/13 (100%)</td>
+                    <td>13/13 (100%)</td>
+                    <td>8/36 (22%)</td>
+                    <td>1/5 (20%)</td>
+                </tr>
+                <tr>
+                    <td>Claude Opus 4.5</td>
+                    <td>11/13 (85%)</td>
+                    <td>13/13 (100%)</td>
+                    <td>2/44 (5%)</td>
+                    <td>1/6 (17%)</td>
+                </tr>
+                <tr>
+                    <td>Gemini 3 Pro</td>
+                    <td>10/13 (77%)</td>
+                    <td>13/13 (100%)</td>
+                    <td>0/17 (0%)</td>
+                    <td>5/7 (71%)</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="table-notes"><em>Notes:</em> Execution success = papers that produced executable code and regression output. Perfect matches defined as coefficient drift &lt;0.5 SE from published values. Detailed prompts achieved universal execution: all three models reached 100%, with Opus improving by 15 percentage points and Gemini by 23 points. Notably, Gemini's coefficient accuracy improved dramatically under detailed prompts (71% within 0.5 SE, 100% within 1.0 SE), achieving the best accuracy of all three models.</p>
+    </div>
+    
+    <p>Codex maintained its 100% execution rate under both prompt conditions, demonstrating robust performance regardless of specification detail. This consistency suggests that Codex's architecture handles both concise methodology descriptions and exhaustive variable-level specifications equally well.</p>
+    
+    <p>Opus's improvement—from 85% to 100% execution—reveals that its binding constraint was prompt ambiguity rather than econometric capability. Under initial prompts, Opus failed on Papers 02 (Mexico SME) and 13 (Pakistan tax) due to unclear variable mappings and sample restrictions. The detailed prompts eliminated this ambiguity, allowing Opus to proceed systematically through each requirement.</p>
+    
+    <p>Gemini's substantial improvement—from 77% to 100%—traces directly to variable-naming disambiguation. Under initial prompts, Gemini persistently struggled with data dictionary mappings, attempting to infer outcome variables from imperfectly labeled datasets and frequently selecting the wrong column. Explicit variable names in detailed prompts solved this mechanical problem across all papers. This 23 percentage point gain—the largest among the three models—suggests that Gemini's binding constraint was purely informational rather than architectural.</p>
+    
+    <p>The key finding is that detailed prompts achieved universal execution success. All three models reached 100% under detailed specifications, completely eliminating the execution gap observed under initial prompts. This implies that explicit variable-level documentation is sufficient to overcome the ambiguity-driven failures that plagued initial attempts. The practical implication is clear: invest in detailed methodology documentation, as it enables even the weakest performer to match the strongest. Figure 2 visualizes these patterns.</p>
+    
+    <!-- Figure 2: Execution Success by Prompt Condition -->
+    <div class="figure">
+        <p><strong>Figure 2: Execution Success by Prompt Condition</strong></p>
+        <div style="display: flex; justify-content: center; align-items: flex-end; gap: 40px; margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+            <!-- GPT Codex -->
+            <div style="text-align: center;">
+                <div style="display: flex; align-items: flex-end; gap: 8px; height: 200px;">
+                    <div style="width: 40px; height: 200px; background: #3b82f6; display: flex; align-items: flex-end; justify-content: center; color: white; font-size: 12px; padding-bottom: 5px;">100%</div>
+                    <div style="width: 40px; height: 200px; background: #1e40af; display: flex; align-items: flex-end; justify-content: center; color: white; font-size: 12px; padding-bottom: 5px;">100%</div>
+                </div>
+                <p style="margin-top: 10px; font-size: 12px;"><strong>GPT Codex</strong><br><span style="color: #666;">±0pp</span></p>
+            </div>
+            <!-- Claude Opus -->
+            <div style="text-align: center;">
+                <div style="display: flex; align-items: flex-end; gap: 8px; height: 200px;">
+                    <div style="width: 40px; height: 170px; background: #22c55e; display: flex; align-items: flex-end; justify-content: center; color: white; font-size: 12px; padding-bottom: 5px;">85%</div>
+                    <div style="width: 40px; height: 200px; background: #15803d; display: flex; align-items: flex-end; justify-content: center; color: white; font-size: 12px; padding-bottom: 5px;">100%</div>
+                </div>
+                <p style="margin-top: 10px; font-size: 12px;"><strong>Claude Opus</strong><br><span style="color: #22c55e;">+15pp</span></p>
+            </div>
+            <!-- Gemini Pro -->
+            <div style="text-align: center;">
+                <div style="display: flex; align-items: flex-end; gap: 8px; height: 200px;">
+                    <div style="width: 40px; height: 154px; background: #f59e0b; display: flex; align-items: flex-end; justify-content: center; color: white; font-size: 12px; padding-bottom: 5px;">77%</div>
+                    <div style="width: 40px; height: 200px; background: #b45309; display: flex; align-items: flex-end; justify-content: center; color: white; font-size: 12px; padding-bottom: 5px;">100%</div>
+                </div>
+                <p style="margin-top: 10px; font-size: 12px;"><strong>Gemini Pro</strong><br><span style="color: #f59e0b;">+23pp</span></p>
+            </div>
+        </div>
+        <div style="text-align: center; margin-bottom: 10px;">
+            <span style="display: inline-block; margin: 0 15px;"><span style="display: inline-block; width: 20px; height: 12px; background: linear-gradient(to right, #3b82f6, #22c55e, #f59e0b); margin-right: 5px;"></span> Initial Prompts</span>
+            <span style="display: inline-block; margin: 0 15px;"><span style="display: inline-block; width: 20px; height: 12px; background: linear-gradient(to right, #1e40af, #15803d, #b45309); margin-right: 5px;"></span> Detailed Prompts</span>
+        </div>
+        <p class="figure-notes"><em>Notes:</em> Execution success rates under initial prompts (standard methodology descriptions) versus detailed prompts (exhaustive variable-level specifications). Annotations show percentage point change. All three models achieved 100% execution under detailed prompts: Codex maintained its lead, Opus improved by 15 percentage points, and Gemini improved by 23 points. N = 13 papers per model-condition pair.</p>
+    </div>
+    
+    <h3>5.2 Overall replication success</h3>
+    
+    <!-- Table 2 -->
+    <div class="table-container">
+        <table>
+            <caption>Table 2: Model Performance Summary</caption>
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Papers Completed</th>
+                    <th>Success Rate</th>
+                    <th>Coefficients Generated</th>
+                    <th>Perfect Match</th>
+                    <th>Time (min)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>GPT 5.1 Codex</td>
+                    <td>13/13</td>
+                    <td>100%</td>
+                    <td>431</td>
+                    <td>8 (22%)</td>
+                    <td>~180</td>
+                </tr>
+                <tr>
+                    <td>Claude Opus 4.5</td>
+                    <td>11/13</td>
+                    <td>85%</td>
+                    <td>~44</td>
+                    <td>2 (5%)</td>
+                    <td>~95</td>
+                </tr>
+                <tr>
+                    <td>Gemini 3 Pro</td>
+                    <td>10/13</td>
+                    <td>77%</td>
+                    <td>17</td>
+                    <td>0 (0%)</td>
+                    <td>~240</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="table-notes"><em>Notes:</em> Papers Completed indicates the number of papers for which the model generated executable code producing coefficient estimates. Perfect Match defined as drift &lt; 0.05 SE. Time includes all iterations and debugging.</p>
+    </div>
+    
+    <p class="no-indent">Codex is the only agent that combined universal execution with double-digit perfect matches, albeit at the cost of long runtimes. Claude worked roughly twice as fast but sacrificed accuracy and failed on two multilevel designs. Gemini persevered through repeated debugging but rarely landed on the correct specification. In short: Codex for precision, Claude for quick exploratory replications, Gemini for stubborn data wrangling.</p>
+    
+    <h3>5.3 India maternal literacy: a success example</h3>
+    
+    <p class="no-indent">The maternal literacy and CHAMP experiment highlights how well agents perform once prompts specify variables precisely. Codex essentially reproduced the main table:</p>
+    
+    <!-- Table 3 -->
+    <div class="table-container">
+        <table>
+            <caption>Table 3: India Maternal Literacy Study: Coefficient Comparison</caption>
+            <thead>
+                <tr>
+                    <th>Outcome</th>
+                    <th>Published β</th>
+                    <th>Codex β</th>
+                    <th>Drift (SE)</th>
+                    <th>Match</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Child Math (ML)</td>
+                    <td>0.035</td>
+                    <td>0.0351</td>
+                    <td>0.01</td>
+                    <td><strong>Perfect</strong></td>
+                </tr>
+                <tr>
+                    <td>Child Math (CHAMP)</td>
+                    <td>0.032</td>
+                    <td>0.0324</td>
+                    <td>0.03</td>
+                    <td><strong>Perfect</strong></td>
+                </tr>
+                <tr>
+                    <td>Child Math (ML+CHAMP)</td>
+                    <td>0.056</td>
+                    <td>0.0557</td>
+                    <td>0.02</td>
+                    <td><strong>Perfect</strong></td>
+                </tr>
+                <tr>
+                    <td>Child Language (ML+CHAMP)</td>
+                    <td>0.042</td>
+                    <td>0.0423</td>
+                    <td>0.02</td>
+                    <td><strong>Perfect</strong></td>
+                </tr>
+                <tr>
+                    <td>Mother Total (ML+CHAMP)</td>
+                    <td>0.12</td>
+                    <td>0.1237</td>
+                    <td>0.28</td>
+                    <td>Minor</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="table-notes"><em>Notes:</em> Coefficients represent standard deviation units. Drift calculated as the absolute difference between AI-generated and published coefficients divided by published standard errors. ML = Maternal Literacy; CHAMP = Children's homework support program.</p>
+    </div>
+    
+    <p>Codex succeeded because it matched the author recipe almost verbatim: normalized outcomes, the full baseline-control vector with missing indicators, stratum fixed effects, and village clustering. Claude, by contrast, dropped the controls and triggered collinearity—underscoring that small prompt omissions map directly into major estimation gaps.</p>
+    
+    <h3>5.4 Coefficient Accuracy Under Detailed Prompts</h3>
+    
+    <!-- Table 6 -->
+    <div class="table-container">
+        <table>
+            <caption>Table 4: Coefficient Accuracy Under Detailed Prompts</caption>
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>GPT Codex</th>
+                    <th>Claude Opus</th>
+                    <th>Gemini Pro</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Coefficients matched</td>
+                    <td>5</td>
+                    <td>6</td>
+                    <td>7</td>
+                </tr>
+                <tr>
+                    <td>Mean drift (SE)</td>
+                    <td>2.42</td>
+                    <td>1.74</td>
+                    <td>0.32</td>
+                </tr>
+                <tr>
+                    <td>Median drift (SE)</td>
+                    <td>0.93</td>
+                    <td>0.84</td>
+                    <td><strong>0.19</strong></td>
+                </tr>
+                <tr>
+                    <td>Within 0.5 SE</td>
+                    <td>20%</td>
+                    <td>17%</td>
+                    <td><strong>71%</strong></td>
+                </tr>
+                <tr>
+                    <td>Within 1.0 SE</td>
+                    <td>60%</td>
+                    <td>67%</td>
+                    <td><strong>100%</strong></td>
+                </tr>
+                <tr>
+                    <td>Within 2.0 SE</td>
+                    <td>80%</td>
+                    <td>83%</td>
+                    <td>100%</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="table-notes"><em>Notes:</em> Drift calculated as |β̂<sub>LLM</sub> − β<sub>pub</sub>| / SE<sub>pub</sub>. Manual matching based on alignment between LLM output variable names and published outcome descriptions. Sign concordance across all matches: 94% (17/18).</p>
+    </div>
+    
+    <p class="no-indent">Under detailed prompts, Gemini achieved the best coefficient accuracy: mean drift of 0.32 SE (median 0.19 SE), with 71% of estimates within 0.5 SE and 100% within 1.0 SE. This represents a remarkable improvement from its poor initial performance and demonstrates that detailed prompts can dramatically improve coefficient accuracy for models that struggled with ambiguity. Figure 3 shows the distribution of coefficient drift under initial prompts.</p>
+    
+    <!-- Figure 3: Distribution of Coefficient Drift -->
+    <div class="figure">
+        <p><strong>Figure 3: Distribution of Coefficient Drift by Model (Initial Prompts)</strong></p>
+        <div style="padding: 20px; background: #f9f9f9; border-radius: 8px; margin: 20px 0;">
+            <!-- Y-axis label -->
+            <div style="display: flex; align-items: center;">
+                <div style="writing-mode: vertical-rl; transform: rotate(180deg); margin-right: 10px; font-size: 12px; color: #666;">Percentage of Outcomes</div>
+                
+                <div style="flex: 1;">
+                    <!-- Chart area -->
+                    <div style="display: flex; flex-direction: column;">
+                        <!-- Y-axis scale -->
+                        <div style="display: flex; margin-bottom: 5px;">
+                            <div style="width: 40px; text-align: right; font-size: 11px; color: #666;">70%</div>
+                        </div>
+                        
+                        <!-- Bars -->
+                        <div style="display: flex; justify-content: space-around; align-items: flex-end; height: 250px; border-left: 2px solid #333; border-bottom: 2px solid #333; padding: 10px 20px;">
+                            <!-- Perfect -->
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                                <div style="display: flex; align-items: flex-end; gap: 4px; height: 200px;">
+                                    <div style="width: 25px; height: 63px; background: #3b82f6;" title="GPT Codex: 22%"></div>
+                                    <div style="width: 25px; height: 14px; background: #22c55e;" title="Claude Opus: 5%"></div>
+                                    <div style="width: 25px; height: 0px; background: #f59e0b;" title="Gemini Pro: 0%"></div>
+                                </div>
+                                <span style="font-size: 11px; margin-top: 5px;">Perfect<br><span style="color:#888; font-size:10px;">&lt;0.05</span></span>
+                            </div>
+                            <!-- Minor -->
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                                <div style="display: flex; align-items: flex-end; gap: 4px; height: 200px;">
+                                    <div style="width: 25px; height: 40px; background: #3b82f6;" title="GPT Codex: 14%"></div>
+                                    <div style="width: 25px; height: 23px; background: #22c55e;" title="Claude Opus: 8%"></div>
+                                    <div style="width: 25px; height: 17px; background: #f59e0b;" title="Gemini Pro: 6%"></div>
+                                </div>
+                                <span style="font-size: 11px; margin-top: 5px;">Minor<br><span style="color:#888; font-size:10px;">0.05-0.20</span></span>
+                            </div>
+                            <!-- Moderate -->
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                                <div style="display: flex; align-items: flex-end; gap: 4px; height: 200px;">
+                                    <div style="width: 25px; height: 31px; background: #3b82f6;" title="GPT Codex: 11%"></div>
+                                    <div style="width: 25px; height: 43px; background: #22c55e;" title="Claude Opus: 15%"></div>
+                                    <div style="width: 25px; height: 34px; background: #f59e0b;" title="Gemini Pro: 12%"></div>
+                                </div>
+                                <span style="font-size: 11px; margin-top: 5px;">Moderate<br><span style="color:#888; font-size:10px;">0.20-0.50</span></span>
+                            </div>
+                            <!-- Substantial -->
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                                <div style="display: flex; align-items: flex-end; gap: 4px; height: 200px;">
+                                    <div style="width: 25px; height: 49px; background: #3b82f6;" title="GPT Codex: 17%"></div>
+                                    <div style="width: 25px; height: 51px; background: #22c55e;" title="Claude Opus: 18%"></div>
+                                    <div style="width: 25px; height: 51px; background: #f59e0b;" title="Gemini Pro: 18%"></div>
+                                </div>
+                                <span style="font-size: 11px; margin-top: 5px;">Substantial<br><span style="color:#888; font-size:10px;">0.50-1.00</span></span>
+                            </div>
+                            <!-- Major -->
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                                <div style="display: flex; align-items: flex-end; gap: 4px; height: 200px;">
+                                    <div style="width: 25px; height: 103px; background: #3b82f6;" title="GPT Codex: 36%"></div>
+                                    <div style="width: 25px; height: 154px; background: #22c55e;" title="Claude Opus: 54%"></div>
+                                    <div style="width: 25px; height: 183px; background: #f59e0b;" title="Gemini Pro: 64%"></div>
+                                </div>
+                                <span style="font-size: 11px; margin-top: 5px;">Major<br><span style="color:#888; font-size:10px;">≥1.00</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Legend -->
+            <div style="display: flex; justify-content: center; gap: 30px; margin-top: 15px; font-size: 12px;">
+                <span><span style="display: inline-block; width: 15px; height: 15px; background: #3b82f6; margin-right: 5px; vertical-align: middle;"></span> GPT Codex</span>
+                <span><span style="display: inline-block; width: 15px; height: 15px; background: #22c55e; margin-right: 5px; vertical-align: middle;"></span> Claude Opus</span>
+                <span><span style="display: inline-block; width: 15px; height: 15px; background: #f59e0b; margin-right: 5px; vertical-align: middle;"></span> Gemini Pro</span>
+            </div>
+            
+            <!-- X-axis label -->
+            <p style="text-align: center; margin-top: 10px; font-size: 12px; color: #666;">Drift Category (in Standard Errors)</p>
+        </div>
+        <p class="figure-notes"><em>Notes:</em> Drift categories defined as: Perfect (&lt;0.05 SE), Minor (0.05–0.20 SE), Moderate (0.20–0.50 SE), Substantial (0.50–1.00 SE), Major (≥1.00 SE). Percentages based on all coefficients generated by each model under initial methodology-level prompts. GPT Codex shows the best distribution with 22% perfect matches, while Gemini Pro shows 64% major deviations under initial prompts (improving dramatically under detailed prompts).</p>
+    </div>
+    
+    <h3>5.5 Divergence Source Classification</h3>
+    
+    <!-- Table 5 -->
+    <div class="table-container">
+        <table>
+            <caption>Table 5: Divergence Source Classification</caption>
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>Frequency</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Outcome variable selection</td>
+                    <td>34%</td>
+                    <td>Papers 01, 05, 12: multiple outcomes available</td>
+                </tr>
+                <tr>
+                    <td>Sample restriction missed</td>
+                    <td>23%</td>
+                    <td>Papers 01, 12: subgroup specifications</td>
+                </tr>
+                <tr>
+                    <td>Scale/transformation</td>
+                    <td>19%</td>
+                    <td>Papers 04, 06: proportions vs. percentage points</td>
+                </tr>
+                <tr>
+                    <td>Control specification</td>
+                    <td>15%</td>
+                    <td>Papers 09, 11: baseline controls omitted</td>
+                </tr>
+                <tr>
+                    <td>Data encoding issues</td>
+                    <td>9%</td>
+                    <td>Papers 05, 08: variable name mismatches</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="table-notes"><em>Notes:</em> Classification based on systematic comparison of AI-generated code to original analysis scripts. Percentages sum to 100% of identified divergence sources.</p>
+    </div>
+    
+    <h3>5.6 Hallucinations are rare; ambiguity is not</h3>
+    
+    <p class="no-indent">Only 8 percent of divergences involved outright hallucinations in which a model invented a method that contradicted the prompt. For the most part, agents respected econometric guardrails.</p>
+    
+    <p>The remaining gaps were mundane: 47 percent misinterpretations where vague prose allowed multiple defensible implementations, and 31 percent best-practice defaults such as reporting proportions instead of percentage points in the Indonesia audit study. These patterns mean analysts must read the generated code, rescale units, and decide whether the difference reflects presentation or substance—the same diligence already required for human-written replications.</p>
+    
+    <!-- Section 6: Root Cause Analysis -->
+    <h2>6. Root Cause Analysis</h2>
+    
+    <h3>6.1 Taxonomy of Failure Modes</h3>
+    
+    <div class="table-container">
+        <table>
+            <caption>Table 6: Failure Mode Taxonomy</caption>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Definition</th>
+                    <th>Responsibility</th>
+                    <th>Frequency</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Hallucination</td>
+                    <td>AI agent invented method not in prompt</td>
+                    <td>AI Error</td>
+                    <td>8%</td>
+                </tr>
+                <tr>
+                    <td>Misinterpretation</td>
+                    <td>Ambiguous text led to wrong choice</td>
+                    <td>Prompt Gap</td>
+                    <td>47%</td>
+                </tr>
+                <tr>
+                    <td>Best Practice</td>
+                    <td>Applied standard-but-unspecified approach</td>
+                    <td>Methodological</td>
+                    <td>31%</td>
+                </tr>
+                <tr>
+                    <td>Data Mismatch</td>
+                    <td>Variable names differed from prompt</td>
+                    <td>Documentation</td>
+                    <td>14%</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="table-notes"><em>Notes:</em> Classification based on systematic code comparison for all divergent results. "Responsibility" indicates primary attribution for divergence.</p>
+    </div>
+    
+    <h3>6.2 The Jagged Frontier in Econometrics</h3>
+    
+    <p class="no-indent">Consistent with Dell'Acqua et al. (2023), we find AI agent capability is uneven across tasks:</p>
+    
+    <div class="table-container">
+        <table>
+            <caption>Table 7: Econometric Task Difficulty for AI Agents</caption>
+            <thead>
+                <tr>
+                    <th>Capability Level</th>
+                    <th>Technique</th>
+                    <th>Success Rate</th>
+                    <th>Common Failures</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="3"><strong>High</strong></td>
+                    <td>Basic OLS</td>
+                    <td>85%</td>
+                    <td>Scale issues</td>
+                </tr>
+                <tr>
+                    <td>Clustered SE</td>
+                    <td>78%</td>
+                    <td>Wrong clustering level</td>
+                </tr>
+                <tr>
+                    <td>Summary statistics</td>
+                    <td>95%</td>
+                    <td>Minor formatting</td>
+                </tr>
+                <tr>
+                    <td rowspan="3"><strong>Moderate</strong></td>
+                    <td>Fixed effects</td>
+                    <td>72%</td>
+                    <td>Wrong FE specification</td>
+                </tr>
+                <tr>
+                    <td>ANCOVA with controls</td>
+                    <td>55%</td>
+                    <td>Missing baseline vars</td>
+                </tr>
+                <tr>
+                    <td>Multi-arm RCT</td>
+                    <td>45%</td>
+                    <td>Treatment coding</td>
+                </tr>
+                <tr>
+                    <td rowspan="3"><strong>Low</strong></td>
+                    <td>Subgroup analysis</td>
+                    <td>35%</td>
+                    <td>Sample restrictions</td>
+                </tr>
+                <tr>
+                    <td>IV/2SLS</td>
+                    <td>30%</td>
+                    <td>Instrument selection</td>
+                </tr>
+                <tr>
+                    <td>Complex DiD</td>
+                    <td>40%</td>
+                    <td>Timing, parallel trends</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="table-notes"><em>Notes:</em> Success rate indicates percentage of attempts producing coefficients within 1 SE of published values. Based on combined performance across all three models.</p>
+    </div>
+    
+    <p>The table makes the frontier obvious: agents cruise through plain OLS, summary stats, and even clustered errors, but accuracy falls off once specifications demand precise baseline controls, multi-arm logic, or sample restrictions. Anything that requires translating prose labels into exact variable lists—ancova controls, subgroup filters, IV instruments—remains fragile.</p>
+    
+    <!-- Section 7: Discussion -->
+    <h2>7. Discussion</h2>
+    
+    <h3>7.1 Cross-Cutting Themes: Transparency, Standards, Open Science</h3>
+    
+    <p class="no-indent">Our evidence speaks to three intertwined fronts that matter across journals, funders, and policy labs: transparency in the age of AI, adaptive standards that balance privacy with reproducibility, and open-science practices that build trust.</p>
+    
+    <p><strong>Transparency and accountability for AI systems.</strong> By benchmarking multiple agents on public RCTs and publishing the full prompt-plus-validation loop, we demonstrate how to verify generative technologies with concrete drift metrics and failure taxonomies. The runtime critique protocol functions as an accountability layer that any lab can adopt when deploying AI in predictive or generative settings.</p>
+    
+    <p><strong>Adapting standards and tooling.</strong> The prompt treatments, documentation templates, and checklists provide a blueprint for encoding identification logic without exposing sensitive data. They highlight where privacy-preserving variable descriptions suffice and where literal column names are indispensable, helping practitioners navigate the trade-off between confidentiality and replicability.</p>
+    
+    <p><strong>Open science, trust, and reuse.</strong> Version-controlled prompt logs, automated plausibility checks, and structured replication archives lower the marginal cost of auditing results. By showing that simple guardrails catch every catastrophic failure, we offer evidence that transparency investments can shift perceptions among policymakers and spread the benefits of AI assistance more evenly across research teams.</p>
+    
+    <h3>7.2 Practitioner's Checklist: Evidence-Based Recommendations</h3>
+    
+    <div class="table-container">
+        <table>
+            <caption>Table 8: Practitioner's Checklist for AI-Assisted Replication</caption>
+            <thead>
+                <tr>
+                    <th>Stage</th>
+                    <th>Action</th>
+                    <th>Evidence from This Study</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="3"><em>Before Running AI Agent</em></td>
+                </tr>
+                <tr>
+                    <td>Prompt Design</td>
+                    <td>Detailed prompts eliminate execution failures</td>
+                    <td>All three models achieved 100% under detailed prompts (Opus +15pp, Gemini +23pp)</td>
+                </tr>
+                <tr>
+                    <td>Variable Names</td>
+                    <td>Include exact column names, not prose descriptions</td>
+                    <td>Papers with SD units (explicit scaling) had 57% lower drift (0.84 vs 1.94 SE)</td>
+                </tr>
+                <tr>
+                    <td>Complexity Assessment</td>
+                    <td>Classify paper difficulty; allocate more review time for hard papers</td>
+                    <td>Easy papers averaged 0.77 SE drift; hard papers averaged 3.34 SE drift</td>
+                </tr>
+                <tr>
+                    <td colspan="3"><em>During Execution</em></td>
+                </tr>
+                <tr>
+                    <td>Sample Size Check</td>
+                    <td>Verify N matches published value within 5%</td>
+                    <td>Sample mismatch explained 14% of failures</td>
+                </tr>
+                <tr>
+                    <td>Iteration Monitoring</td>
+                    <td>Flag runs exceeding 5 iterations as high-risk</td>
+                    <td>Failed Codex runs averaged 6.1 iterations vs 3.4 for successes</td>
+                </tr>
+                <tr>
+                    <td colspan="3"><em>After Execution</em></td>
+                </tr>
+                <tr>
+                    <td>Magnitude Check</td>
+                    <td>Flag coefficients &gt;2 SE from expectations</td>
+                    <td>100% of catastrophic failures would have been caught by 2-SE threshold</td>
+                </tr>
+                <tr>
+                    <td>Sign Verification</td>
+                    <td>Confirm coefficient sign matches theory</td>
+                    <td>Sign errors were present in 15% of major divergences</td>
+                </tr>
+                <tr>
+                    <td>Clustering Audit</td>
+                    <td>Verify clustering level matches paper</td>
+                    <td>Wrong clustering was most common best-practice failure</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="table-notes"><em>Notes:</em> Recommendations derived from analysis of 39 agent-paper pairs across 13 J-PAL RCTs. SE = standard error of published coefficient.</p>
+    </div>
+    
+    <h3>7.3 Limitations</h3>
+    
+    <p class="no-indent">Four caveats remain. (i) The thirteen RCTs intentionally use mainstream estimators; we do not test more exotic designs such as weak-IV settings, RDD bandwidth searches, or structural simulation. (ii) Prompt wording reflects our interpretation of each methodology section. Authors writing their own structured prompts might supply richer context or embed new biases. (iii) Models evolve quickly, so our benchmark is a snapshot of early-2025 capabilities, not a permanent ranking. (iv) Each agent-paper pair was run once; output variance documented by Spirling et al. (2025) implies that repeated draws could widen or narrow the drift distribution.</p>
+    
+    <!-- Section 8: Conclusion -->
+    <h2 id="conclusion">8. Conclusion</h2>
+    
+    <p class="no-indent">Our benchmark shows that frontier agents easily write executable code but only reproduce coefficients when methodology text supplies the right level of detail. Under initial prompts mimicking standard paper descriptions, Codex executed 100% of studies (matching 22% of coefficients exactly), Opus 85%, and Gemini 77%. Providing exhaustive variable-level specifications closed the execution gap entirely: all three models achieved 100% success, with Opus improving by 15 percentage points and Gemini by 23 points. This universal success demonstrates that detailed documentation eliminates ambiguity-driven failures regardless of model architecture. Overall divergences mostly trace back to prompt ambiguity (47%) and best-practice defaults (31%) rather than hallucinations (8%), and simple plausibility checks would have caught every catastrophic miss.</p>
+    
+    <p>The takeaway is to invest less in ever-longer prompts and more in structured documentation plus runtime validation. Prompt templates that force analysts to name variables, filters, and clustering units, combined with automated checks on magnitudes and sample sizes, can harness AI speed without sacrificing credibility. With those guardrails, agents become practical collaborators for replication and, by extension, for new empirical work.</p>
+    
+    <p>Looking ahead, three avenues appear most promising. First, integrating self-auditing routines—similar to the validation loop we piloted—directly into IDEs would allow AI agents to flag inconsistent sample sizes or implausible magnitudes before analysts even inspect the output. Second, training datasets that pair methodology text with executable code (for example, curated replication packages annotated with prompts) could teach models to infer missing details more reliably. Third, journals and data repositories can incorporate prompt logs as part of submission materials so that future researchers inherit not only scripts but also the instructions used to generate them. Collectively, these improvements would shift the conversation from "Can AI replicate?" to "How do we design institutions so that AI and humans jointly safeguard credibility?"</p>
+    
+    <!-- Acknowledgements -->
+    <h2>Acknowledgements</h2>
+    <p class="no-indent">We thank the Abdul Latif Jameel Poverty Action Lab (J-PAL) for making replication data publicly available through their Dataverse repository. We declare no conflicts of interest.</p>
+    
+    <!-- References -->
+    <h2 id="references">References</h2>
+    
+    <div class="references">
+        <p>Brodeur, A., Lé, M., Sangnier, M., &amp; Zylberberg, Y. (2016). Star Wars: The Empirics Strike Back. <em>American Economic Journal: Applied Economics</em>, 8(1), 1–32. <a href="https://doi.org/10.1257/app.20150044">https://doi.org/10.1257/app.20150044</a></p>
+        
+        <p>Brodeur, A., Mikola, D., Cook, N., et al. (2024). Mass reproducibility and replicability: A new hope. IZA Discussion Paper No. 16912. <a href="https://www.iza.org/publications/dp/16912">https://www.iza.org/publications/dp/16912</a></p>
+        
+        <p>Camerer, C. F., Dreber, A., Forsell, E., et al. (2016). Evaluating replicability of laboratory experiments in economics. <em>Science</em>, 351(6280), 1433–1436. <a href="https://doi.org/10.1126/science.aaf0918">https://doi.org/10.1126/science.aaf0918</a></p>
+        
+        <p>Chang, A. C., &amp; Li, P. (2015). Is economics research replicable? Sixty published papers from thirteen journals say "usually not." Finance and Economics Discussion Series 2015-083, Board of Governors of the Federal Reserve System. <a href="http://dx.doi.org/10.17016/FEDS.2015.083">http://dx.doi.org/10.17016/FEDS.2015.083</a></p>
+        
+        <p>Christensen, G. S., &amp; Miguel, E. (2018). Transparency, reproducibility, and the credibility of economics research. <em>Journal of Economic Literature</em>, 56(3), 920–980. <a href="https://doi.org/10.1257/jel.20171350">https://doi.org/10.1257/jel.20171350</a></p>
+        
+        <p>Cinelli, C., &amp; Hazlett, C. (2020). Making sense of sensitivity: Extending omitted variable bias. <em>Journal of the Royal Statistical Society: Series B</em>, 82(1), 39–67. <a href="https://doi.org/10.1111/rssb.12348">https://doi.org/10.1111/rssb.12348</a></p>
+        
+        <p>Coffman, L. C., &amp; Niederle, M. (2015). Pre-analysis plans have limited upside, especially where replications are feasible. <em>Journal of Economic Perspectives</em>, 29(3), 81–98. <a href="https://doi.org/10.1257/jep.29.3.81">https://doi.org/10.1257/jep.29.3.81</a></p>
+        
+        <p>Dell'Acqua, F., McFowland III, E., Mollick, E. R., et al. (2023). Navigating the jagged technological frontier: Field experimental evidence of the effects of AI on knowledge worker productivity and quality. Harvard Business School Working Paper 24-013. <a href="https://www.hbs.edu/faculty/Pages/item.aspx?num=64700">https://www.hbs.edu/faculty/Pages/item.aspx?num=64700</a></p>
+        
+        <p>Hamermesh, D. S. (2007). Replication in economics. NBER Working Paper No. 13026. <a href="https://doi.org/10.3386/w13026">https://doi.org/10.3386/w13026</a></p>
+        
+        <p>Herbert, S., Kingi, H., Stanchi, F., &amp; Vilhuber, L. (2021). The reproducibility of economics research: A case study. Banque de France Working Paper No. 853. <a href="https://publications.banque-france.fr/en/reproducibility-economics-research-case-study">https://publications.banque-france.fr/en/reproducibility-economics-research-case-study</a></p>
+        
+        <p>Horton, J. J. (2023). Large language models as simulated economic agents: What can we learn from homo silicus? NBER Working Paper No. 31122. <a href="https://doi.org/10.3386/w31122">https://doi.org/10.3386/w31122</a></p>
+        
+        <p>Hu, C., Zhang, L., Lim, Y., Wadhwani, A., Peters, A., &amp; Kang, D. (2025). REPRO-BENCH: Can agentic AI systems assess the reproducibility of social science research? <em>Findings of the Association for Computational Linguistics: ACL 2025</em>. <a href="https://aclanthology.org/2025.findings-acl.1210">https://aclanthology.org/2025.findings-acl.1210</a></p>
+        
+        <p>Huntington-Klein, N., Arenas, A., Beam, E., et al. (2021). The influence of hidden researcher decisions in applied microeconomics. <em>Economic Inquiry</em>, 59(3), 944–960. <a href="https://doi.org/10.1111/ecin.12992">https://doi.org/10.1111/ecin.12992</a></p>
+        
+        <p>IEEE Transactions on Software Engineering. (2025). Advancing LLM-generated code reliability: A hybrid approach for hallucination detection. <em>IEEE Transactions on Software Engineering</em>.</p>
+        
+        <p>Korinek, A. (2023). Generative AI for economic research: Use cases and implications for economists. <em>Journal of Economic Literature</em>, 61(4), 1281–1317. <a href="https://doi.org/10.1257/jel.20231736">https://doi.org/10.1257/jel.20231736</a></p>
+        
+        <p>Noy, S., &amp; Zhang, W. (2023). Experimental evidence on the productivity effects of generative artificial intelligence. <em>Science</em>, 381(6654), 187–192. <a href="https://doi.org/10.1126/science.adh2586">https://doi.org/10.1126/science.adh2586</a></p>
+        
+        <p>RepoAudit. (2025). An autonomous LLM-agent for repository-level code auditing. arXiv:2501.18160. <a href="https://arxiv.org/abs/2501.18160">https://arxiv.org/abs/2501.18160</a></p>
+        
+        <p>Spirling, A., Barrie, C., &amp; Palmer, A. (2025). Replication for language models: Problems, principles, and best practices for political science. Working paper, November 2025.</p>
+        
+        <p>Vilhuber, L. (2020). Reproducibility and replicability in economics. <em>Harvard Data Science Review</em>, 2(4). <a href="https://doi.org/10.1162/99608f92.4f6b9e67">https://doi.org/10.1162/99608f92.4f6b9e67</a></p>
+        
+        <p>Zhang, J., Khan, J., Zenil, H., et al. (2025). Exploring the role of large language models in the scientific method. <em>Nature Communications</em>.</p>
+    </div>
+    
+    <hr style="margin: 3em 0;">
+    
+    <p style="text-align: center; color: #666; font-size: 0.9em;">
+        <em>* Corresponding author: aubreyjolex@gmail.com</em><br>
+        This working paper is for discussion purposes. Please do not cite without permission.
+    </p>
+
+</body>
+</html>
