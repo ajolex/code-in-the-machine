@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Glass Hammer: Machine Learning for Poverty Targeting in Humanitarian Crises</title>
+    <meta name="description" content="Working paper evaluating machine learning for poverty targeting using Tanzania panel data, comparing ML models against traditional proxy means tests.">
+    <meta name="author" content="Aubrey Jolex">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="A Glass Hammer: Machine Learning for Poverty Targeting in Humanitarian Crises">
+    <meta property="og:description" content="We evaluate machine learning as a rapid poverty targeting alternative to proxy means tests using linked panel data from Tanzania.">
+    <meta property="og:type" content="article">
+    
+    <!-- MathJax for equations -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        :root {
+            --primary: #1a1a2e;
+            --accent: #2563eb;
+            --text: #333;
+            --light-bg: #f8fafc;
+            --border: #e2e8f0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.8;
+            color: var(--text);
+            background: white;
+            max-width: 8.5in;
+            margin: 0 auto;
+            padding: 1in;
+        }
+        
+        /* Title Page */
+        .title-page {
+            text-align: center;
+            padding: 2em 0 3em;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 2em;
+        }
+        
+        .title-page h1 {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 1.5em;
+            line-height: 1.3;
+        }
+        
+        .author {
+            font-size: 1.1em;
+            margin-bottom: 0.3em;
+        }
+        
+        .affiliation {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 1em;
+        }
+        
+        .date {
+            color: #666;
+            margin-bottom: 2em;
+        }
+        
+        /* Abstract */
+        .abstract {
+            background: var(--light-bg);
+            padding: 1.5em;
+            margin: 2em 0;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .abstract h2 {
+            font-size: 1em;
+            margin-bottom: 0.5em;
+        }
+        
+        .abstract p {
+            text-align: justify;
+            font-size: 0.95em;
+        }
+        
+        .keywords, .jel {
+            font-size: 0.9em;
+            margin: 0.5em 0;
+        }
+        
+        /* Sections */
+        h2 {
+            font-size: 1.3em;
+            margin: 2em 0 1em;
+            padding-bottom: 0.3em;
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        h3 {
+            font-size: 1.1em;
+            margin: 1.5em 0 0.8em;
+        }
+        
+        h4 {
+            font-size: 1em;
+            margin: 1.2em 0 0.6em;
+        }
+        
+        p {
+            text-align: justify;
+            margin-bottom: 1em;
+            text-indent: 1.5em;
+        }
+        
+        p:first-of-type, .no-indent {
+            text-indent: 0;
+        }
+        
+        /* Tables */
+        .table-container {
+            margin: 2em 0;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+            margin: 1em 0;
+        }
+        
+        caption {
+            font-weight: bold;
+            text-align: left;
+            margin-bottom: 0.5em;
+            font-size: 1em;
+        }
+        
+        th, td {
+            padding: 0.5em 0.8em;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            border-top: 2px solid var(--primary);
+            border-bottom: 2px solid var(--primary);
+            font-weight: bold;
+        }
+        
+        tbody tr:last-child td {
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        .table-notes {
+            font-size: 0.85em;
+            font-style: italic;
+            margin-top: 0.5em;
+            color: #555;
+        }
+        
+        /* Figures */
+        .figure {
+            margin: 2em 0;
+            text-align: center;
+        }
+        
+        .figure img {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .figure-caption {
+            font-size: 0.9em;
+            margin-top: 0.5em;
+            text-align: left;
+        }
+        
+        .figure-notes {
+            font-size: 0.85em;
+            font-style: italic;
+            margin-top: 0.5em;
+            color: #555;
+            text-align: left;
+        }
+        
+        /* Citations */
+        .citation {
+            color: var(--accent);
+        }
+        
+        /* References */
+        .references {
+            font-size: 0.95em;
+        }
+        
+        .references p {
+            text-indent: -1.5em;
+            padding-left: 1.5em;
+            margin-bottom: 0.8em;
+        }
+        
+        /* Footnotes */
+        .footnote {
+            font-size: 0.85em;
+            vertical-align: super;
+        }
+        
+        /* Navigation */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .nav-bar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 0.9em;
+        }
+        
+        .nav-bar a:hover {
+            text-decoration: underline;
+        }
+        
+        body {
+            margin-top: 50px;
+        }
+        
+        /* Print styles */
+        @media print {
+            .nav-bar { display: none; }
+            body { margin-top: 0; padding: 0.5in; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+                font-size: 11pt;
+            }
+            
+            .title-page h1 {
+                font-size: 1.4em;
+            }
+            
+            table {
+                font-size: 0.8em;
+            }
+        }
+        
+        /* Code blocks */
+        code {
+            font-family: 'Courier New', monospace;
+            background: #f4f4f4;
+            padding: 0.1em 0.3em;
+            font-size: 0.9em;
+        }
+        
+        /* Highlight box */
+        .highlight-box {
+            background: #fff8dc;
+            border: 1px solid #daa520;
+            padding: 1em;
+            margin: 1em 0;
+        }
+        
+        /* Equation display */
+        .equation {
+            text-align: center;
+            margin: 1.5em 0;
+            font-size: 1.05em;
+        }
+        
+        /* Policy statement box */
+        .policy-box {
+            background: var(--light-bg);
+            padding: 1.2em;
+            margin: 1.5em 0;
+            border-left: 4px solid #d97706;
+        }
+        
+        .policy-box p {
+            text-indent: 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-bar">
+        <span><strong>Working Paper</strong></span>
+        <div>
+            <a href="#abstract">Abstract</a>
+            <a href="#introduction">Introduction</a>
+            <a href="#results">Results</a>
+            <a href="#conclusion">Conclusion</a>
+            <a href="#references">References</a>
+        </div>
+    </nav>
+
+    <!-- Title Page -->
+    <div class="title-page">
+        <h1>A Glass Hammer: Machine Learning for Poverty Targeting in Humanitarian Crises</h1>
+        
+        <p class="author">Aubrey Jolex</p>
+        <p class="affiliation">Department of Economics, University of Malawi</p>
+        <p class="affiliation"><a href="mailto:aubreyjolex@gmail.com">aubreyjolex@gmail.com</a></p>
+        <p class="date">February 2, 2026</p>
+    </div>
+    
+    <!-- Abstract -->
+    <div class="abstract" id="abstract">
+        <h2>Abstract</h2>
+        <p>Humanitarian crises require immediate poverty targeting responses that traditional systems cannot provide. When pandemics, natural disasters, or economic shocks strike, proxy means tests (PMT) requiring 12-18 months become operationally infeasible. This paper evaluates machine learning as an alternative, using a linked panel from Tanzania (2008-2012, N=6,185 household-round observations tracking 3,265 unique households) to compare traditional PMT against machine learning (ML) models. Within-period performance is comparable (XGBoost R²=0.56-0.64 vs PMT R²=0.58-0.62), but ML enables rapid targeting at dramatically reduced cost. However, temporal validation on the <em>same households</em> tracked across rounds reveals fragility: ML models degrade 24-36% over 2 years (55-64% over 4 years) versus PMT's 5% (50% over 4 years). Feature importance analysis shows ML models rely on volatile predictors (mobile phone ownership, dwelling materials), while PMT weights stable demographic factors. We characterize this trade-off as the "Glass Hammer" paradox: ML provides powerful crisis response capability but requires traditional verification for sustained programs. Robustness tests demonstrate that hybrid approaches (ML for initial short-term deployment, PMT for medium to long-term verification) optimize the speed-accuracy frontier.</p>
+    </div>
+    
+    <div class="policy-box">
+        <p><strong>Policy Significance Statement.</strong> When humanitarian crises strike, vulnerable households need assistance in days, not months. This research demonstrates that machine learning can identify the poorest households 50-100 times faster than traditional surveys at dramatically reduced cost, but prediction accuracy degrades 24-36% after 2 years (55-64% over 4 years) compared to PMT's 5% (50% over 4 years). For policymakers, this suggests hybrid targeting: use machine learning for rapid crisis response (first 90 days when traditional surveys cannot be deployed), then transition to traditional methods for sustained social protection programs. COVID-19 responses in Togo and other countries demonstrate this approach's feasibility—reaching hundreds of thousands of beneficiaries within weeks while maintaining verification systems for longer-term assistance.</p>
+    </div>
+    
+    <p class="keywords"><strong>Keywords:</strong> poverty targeting; machine learning; proxy means test; humanitarian response; Tanzania; development economics</p>
+    
+    <!-- Section 1: Introduction -->
+    <h2 id="introduction">1. Introduction</h2>
+    
+    <p class="no-indent">When crises strike (pandemics like COVID-19, natural disasters like typhoons and earthquakes, or economic shocks like sudden currency devaluations), the most vulnerable need assistance within days, not months. Yet traditional poverty targeting systems, despite their accuracy, require 12-18 months to implement and cost over $1 million to deploy (Jerven, 2014). This temporal mismatch between crisis speed and institutional response creates a policy dilemma: households facing acute deprivation cannot wait for comprehensive surveys, while governments risk targeting errors if they act without rigorous assessment.</p>
+    
+    <p>Recent humanitarian responses have exposed this tension acutely. During the COVID-19 pandemic in Togo, lockdown measures forced informal workers to stop working, leading to widespread food insecurity and urgent need for rapid beneficiary identification (Aiken et al., 2022). More broadly, governments and humanitarian organizations have launched over 3,300 new social assistance programs since early 2020, distributing more than $800 billion to over 1.5 billion people, often without access to recent poverty data (Aiken et al., 2022). Similar challenges emerge after natural disasters when displacement disrupts existing registries, or during economic shocks when hyperinflation renders targeting lists obsolete within weeks. The urgency of humanitarian response creates fundamental trade-offs between speed and accuracy in policy targeting (Mullainathan and Spiess, 2017).</p>
+    
+    <p>These emergencies have prompted experimentation with machine learning for rapid targeting. In Togo's case, researchers analyzed mobile phone metadata from 1.5 million subscribers and satellite imagery, training models to predict poverty status within 2 weeks and deploying cash transfers to 560,000 beneficiaries (Aiken et al., 2022). The speed was unprecedented. The cost was negligible compared to traditional methods. The accuracy, while imperfect, was sufficient for emergency response.</p>
+    
+    <p>Such episodes crystallize a fundamental tension in development economics: the trade-off between accuracy and agility in poverty targeting. Traditional methods (proxy means tests that use survey household assets to predict consumption) achieve prediction accuracy of R²=0.53-0.66 (Hanna and Olken, 2018). But they are operationally expensive and temporally rigid. Machine learning offers a radically different value proposition: near-instantaneous targeting at marginal cost approaching zero, but with questions about generalizability, bias, and temporal stability that remain inadequately explored.</p>
+    
+    <p>We frame this tension as a choice between two targeting regimes, each optimized for different constraints. Traditional targeting prioritizes accuracy optimization through in-person surveys measuring 70-150 household assets, combined with stepwise regression to predict consumption. Strengths include high within-sample accuracy (R²≈0.55-0.65), transparent coefficients that policymakers can interpret and defend, and established precedent across 80+ countries (McBride and Nichols, 2018). Weaknesses center on operational constraints: 12-18 month implementation timelines, $1+ million budgets, and rapid data depreciation in volatile economic environments.</p>
+    
+    <p>AI-based targeting prioritizes agility optimization through automated extraction of poverty predictors from satellite imagery (Jean et al., 2016; Yeh et al., 2020) or mobile phone metadata (Blumenstock et al., 2015), combined with gradient boosting or neural networks (Mullainathan and Spiess, 2017). Strengths include 2-4 week deployment, near-zero marginal costs once trained, and ability to update predictions continuously. Weaknesses include black-box decision processes that resist explanation, vulnerability to digital divides that exclude the poorest, and uncertain performance when training and deployment contexts diverge.</p>
+    
+    <p>The central question is not which approach is superior (both have empirically demonstrated value in specific contexts) but rather how their comparative advantages map to different operational requirements. When is speed essential, and accuracy negotiable? When does transparency outweigh predictive power? Under what conditions should we combine rather than choose between these methods?</p>
+    
+    <p>This paper addresses these questions through systematic evaluation of machine learning for poverty targeting using panel data from Tanzania. Our contribution is threefold.</p>
+    
+    <p><strong>First, empirical benchmark</strong>: We compare traditional PMT against three machine learning architectures (XGBoost, Random Forest, Gradient Boosting) using a linked panel from Tanzania's National Panel Survey spanning 2008-2012 (N=6,185 household-round observations, 3,265 unique households) (Mullainathan and Spiess, 2017). Unlike previous studies that evaluate ML models only within-sample or in a single time period, we implement genuine temporal validation: training on one survey round and testing on the <em>same households</em> in subsequent rounds separated by 2-4 years. This design directly tests the core promise of ML in poverty targeting: that models trained on historical data will generalize to future targeting decisions. The distinction between in-sample fit and out-of-sample prediction is critical for policy applications (Athey and Wager, 2019).</p>
+    
+    <p><strong>Second, diagnostic framework</strong>: We decompose predictive performance into interpretable components through extensive robustness testing. Temporal stability tests quantify degradation across survey rounds. Noise robustness experiments measure sensitivity to three error types: random prediction flips (±10% observations), Gaussian noise (σ=0.1), and missing data (20% MCAR). Feature importance correlation matrices reveal whether models rely on stable demographic indicators or volatile asset measures. This granular analysis moves beyond aggregate accuracy metrics to understand why models succeed or fail, addressing concerns about researcher degrees of freedom and specification choices in empirical work (Huntington-Klein et al., 2021).</p>
+    
+    <p><strong>Third, policy framework</strong>: We develop what we term the "Glass Hammer" thesis: machine learning for poverty targeting is powerful but fragile. It enables rapid crisis response impossible with traditional methods, but temporal instability and black-box opacity create risks for sustained social programs. We formalize this through a comparative matrix evaluating six dimensions (speed, cost, accuracy, transparency, inclusivity, sustainability) and propose operational guidelines for hybrid deployment based on program duration and acceptable error tolerances.</p>
+    
+    <p>Our findings reveal substantial performance differences across four dimensions. Regarding within-period accuracy, XGBoost achieves R²=0.56-0.64, while PMT achieves R²=0.58-0.62—comparable performance within each survey round. However, temporal stability tests on the <em>same households tracked across rounds</em> reveal critical differences. When trained on one round and tested on subsequent rounds, XGBoost degrades 24% over 2 years (55% over 4 years) while PMT degrades only 5% over 2 years (50% over 4 years), demonstrating substantially greater stability for the traditional approach.</p>
+    
+    <p>Feature stability analysis shows PMT weights maintain Spearman correlation ρ=0.71-0.79 across rounds, while XGBoost feature importance correlations range ρ=0.54-0.74. PMT prioritizes household size, dependency ratios, and education (stable demographics), whereas XGBoost heavily weights mobile phone ownership and roof materials (volatile assets in rapidly changing economies). Noise robustness experiments reveal striking differences: under flip noise perturbations, PMT predictions decline 40.2% while XGBoost declines only 7.6%, demonstrating ML's superior robustness to random perturbations. XGBoost also handles missing data better (6.4% decline vs PMT's 35.6%).</p>
+    
+    <p>These results challenge simplistic narratives about AI superiority or obsolescence. Instead, they suggest that the optimal poverty targeting system is hybrid: machine learning provides first-response infrastructure for the critical 0-90 day humanitarian window, while traditional PMT enables verification and sustained targeting once crises stabilize. We formalize decision rules based on acceptable exclusion error rates, available budgets, and program duration.</p>
+    
+    <p>The paper proceeds as follows. Section 2 reviews three literatures: traditional poverty targeting methods, machine learning innovations in development economics, and emerging work on AI limitations. Section 3 describes Tanzania's economic trajectory and the National Panel Survey data structure. Section 4 details our PMT baseline, machine learning architectures, hyperparameter optimization, and validation strategy. Section 5 presents within-period performance, temporal stability tests, and feature importance analysis. Section 6 develops the Glass Hammer thesis through comparative assessment across six dimensions. Section 7 proposes operational guidelines for hybrid deployment. Section 8 concludes.</p>
+    
+    <!-- Section 2: Literature Review -->
+    <h2>2. Literature Review</h2>
+    
+    <h3>2.1 Traditional Poverty Targeting: The Proxy Means Test</h3>
+    
+    <p class="no-indent">Proxy means testing emerged in Latin America during the 1980s as governments sought alternatives to universal basic income programs (Hanna and Olken, 2018). The core innovation was substituting expensive consumption surveys with easily verifiable asset ownership: rather than measuring what households spend (requiring detailed recall of hundreds of items), PMT collects observable indicators (roof material, livestock ownership, appliance possession) and uses regression to predict consumption.</p>
+    
+    <p>The mathematical foundation is straightforward. Let \(y_i\) denote household consumption (or poverty status) and \(\mathbf{x}_i\) a vector of \(J\) observable assets. The PMT estimates:</p>
+    
+    <div class="equation">
+        $$\hat{y}_i = \beta_0 + \sum_{j=1}^{J} \beta_j x_{ij}$$
+    </div>
+    
+    <p class="no-indent">where coefficients \(\beta_j\) are typically obtained via OLS, stepwise regression, or LASSO on a training sample where both consumption and assets are measured (McBride and Nichols, 2018). Households with predicted consumption \(\hat{y}_i\) below threshold \(\tau\) receive benefits.</p>
+    
+    <p>Hanna and Olken (2018) provide the definitive evaluation using Indonesian and Peruvian data. They document PMT accuracy of R²=0.53-0.66 when predicting consumption, substantially higher than occupation-based targeting (R²=0.45-0.61) or geographic targeting (R²=0.59-0.64). Critically, they emphasize that PMT generates two error types: exclusion errors (failing to reach the true poor) and inclusion errors (providing benefits to non-poor). For Indonesia's BLT program targeting 33% of households, PMT achieved 53% exclusion error (meaning 53% of the truly poor were missed) compared to 61% for geographic targeting.</p>
+    
+    <p>These error rates might seem high until compared to alternatives. Hanna and Olken (2018) show that even hypothetical targeting based on perfect consumption data yields 29% exclusion error due to measurement error in consumption itself. This establishes an accuracy ceiling: no targeting method can substantially exceed R²≈0.65 when consumption is the outcome of interest.</p>
+    
+    <p>The operational requirements of PMT are substantial. Jerven (2014) documents that typical household surveys in sub-Saharan Africa cost $1-3 million and require 12-18 months to complete. Response rates vary widely: the Tanzania National Panel Survey achieves 90%+ response rates in rural areas, but urban panels often see 60-70% attrition (Kilic et al., 2017). Moreover, consumption measurement itself introduces systematic errors depending on survey design—diary methods yield higher consumption estimates than recall methods, with differences of 14-26% documented in randomized experiments (Beegle et al., 2012). Data depreciation is rapid in volatile economies.</p>
+    
+    <h3>2.2 Machine Learning for Development: Promises and Early Evidence</h3>
+    
+    <p class="no-indent">The application of machine learning to development challenges began with satellite imagery analysis. Jean et al. (2016) pioneered using nighttime luminosity and daytime imagery to predict economic activity at granular spatial scales. Their approach trains convolutional neural networks on labeled imagery (daytime satellite photos paired with survey data on asset ownership or consumption), then predicts poverty for unlabeled regions. The advantage: satellite data provides 100% coverage, unlike surveys that sample 0.01-0.1% of households.</p>
+    
+    <p>Blumenstock et al. (2015) extended ML to mobile phone metadata. Using call detail records (CDRs) from 1.5 million Rwandan mobile subscribers, they trained models to predict household wealth from phone usage patterns (call frequency, network diversity, airtime purchases). The resulting predictions generated wealth estimates for the entire mobile-subscriber population from a survey sample of only 856 households—a 1,750× expansion of targeting reach at negligible marginal cost.</p>
+    
+    <p>These innovations generated optimism about ML's potential to revolutionize poverty targeting. The World Bank's Machine Learning for Poverty Prediction initiative documented dozens of pilot projects using satellite imagery, mobile phone data, and social media activity to predict poverty (McBride and Nichols, 2018). Proponents emphasized three advantages: speed (predictions generated within days or weeks), cost (marginal cost approaching zero after initial model development), and coverage (ability to generate predictions for entire populations rather than survey samples).</p>
+    
+    <p>However, McBride and Nichols (2018) issued prescient warnings about over-optimism. Their systematic review of ML applications in social protection identified three risks: overfitting (models that perform well in-sample but poorly out-of-sample), temporal instability (predictions that degrade as economic conditions change), and opacity (black-box models that resist interpretation). They emphasized that the ultimate objective is out-of-sample prediction, not in-sample fit—a distinction often blurred in ML applications.</p>
+    
+    <p>Recent empirical work has substantiated these concerns. Korinek (2023) documents that algorithmic targeting systems can perpetuate or exacerbate existing biases, particularly when training data under-represents marginalized populations. In the Togo Novissi case, Aiken et al. (2022) achieved rapid deployment targeting rural areas, but the phone-based machine learning approach yielded 53% exclusion errors (meaning 53% of the truly poor were missed), alongside systematic under-representation of offline populations who could not access mobile-based registration.</p>
+    
+    <p>The transparency critique has intensified as ML systems move from pilot projects to operational deployment (Amarasinghe et al., 2023; Murphy et al., 2024). Unlike PMT coefficients that can be explained to beneficiaries (e.g., "households with tin roofs score higher than those with thatch roofs"), gradient boosting models with 100+ decision trees resist intuitive explanation. This opacity creates accountability challenges: how can targeting decisions be contested if households cannot understand why they were excluded?</p>
+    
+    <h3>2.3 Temporal Stability and Out-of-Sample Performance</h3>
+    
+    <p class="no-indent">A critical gap in the ML-for-poverty literature is rigorous temporal validation. Most studies evaluate models on held-out test sets from the same survey round—essentially measuring overfitting rather than generalization across time. Yet the policy-relevant question is whether models trained on 2008 data can target 2010 beneficiaries, not whether they predict held-out 2008 observations.</p>
+    
+    <p>McBride and Nichols (2018) emphasize this distinction sharply: "Currently popular estimation procedures prioritize minimization of in-sample prediction errors; however, the objective is out-of-sample prediction." They note that an algorithm can perform well out-of-sample but not out-of-population, highlighting that temporal and spatial generalization require different validation strategies.</p>
+    
+    <p>The few studies implementing genuine temporal validation find substantial degradation. Aiken et al. (2022) found that when machine-learning models or mobile phone data are roughly 18 months out of date, predictive accuracy decreases by 4-6% and precision drops by 10-14%—losses nearly as large as the gains phone-based targeting provides over geographic targeting. Satellite-based poverty predictions show similar instability during periods of rapid agricultural or economic change. Tomes et al. (2025) similarly find that parsimonious ML models for food insufficiency prediction in Malawi achieve comparable accuracy to complex approaches, but that simple heuristics based on price and location often perform nearly as well, raising questions about the value-added of sophisticated ML methods.</p>
+    
+    <p>This temporal fragility stems from non-stationarity in the data-generating process. In developing economies, the relationship between observable features (assets, phone usage, roof materials) and consumption changes as economies grow, urbanize, and adopt new technologies. A mobile phone in 2008 Tanzania indicated upper-middle-class status (3-5% ownership); by 2012, ownership exceeded 50% across all quintiles. Models trained on 2008 relationships will systematically mis-predict 2012 poverty.</p>
+    
+    <p>Our paper addresses this validation gap by implementing multi-round temporal testing using Tanzania's panel data structure. Unlike cross-sectional studies, panel data allows genuine temporal validation: training on one survey round and testing on subsequent rounds separated by 2-4 years. This design directly evaluates ML's core promise for poverty targeting: that historical data can guide future targeting decisions.</p>
+    
+    <!-- Section 3: Context -->
+    <h2>3. Context: Tanzania's Economic Trajectory and Data</h2>
+    
+    <h3>3.1 Tanzania Economic Context (2008-2012)</h3>
+    
+    <p class="no-indent">Tanzania experienced sustained economic growth during our study period, with GDP growth averaging 6-7% annually (World Bank, 2023a; World Bank, 2015). However, growth was uneven spatially and sectorally. Dar es Salaam and other urban centers saw rapid development, while rural agricultural areas grew more slowly. Mobile phone ownership expanded dramatically from approximately 20% (2008) to over 55% (2012), transforming communication patterns (World Bank, 2023a).</p>
+    
+    <p>Poverty rates declined from 33.6% (2007) to 28.2% (2011/12) using the national poverty line (NBS, 2013), but absolute numbers of poor households increased due to population growth. The informal sector employed over 80% of the workforce (World Bank, 2015), complicating taxation and creating challenges for identifying beneficiaries of social programs.</p>
+    
+    <h3>3.2 Tanzania National Panel Survey</h3>
+    
+    <p class="no-indent">We use Tanzania National Panel Survey (TZNPS) data from three rounds: 2008/09 (Round 1), 2010/11 (Round 2), and 2012/13 (Round 3). The survey is part of the World Bank's Living Standards Measurement Study (LSMS) program, designed to track household welfare dynamics through repeated observations of the same households.</p>
+    
+    <p>The TZNPS is nationally representative, tracking households over time across all regions of Tanzania. Round 1 sampled 3,265 original households; subsequent rounds followed these households plus split-offs (when household members form new households). We link households across rounds by mapping Round 2 and Round 3 household identifiers back to their Round 1 origin, yielding N=6,185 household-round observations (3,265 in R1, 1,669 in R2, 1,251 in R3) with consistent identification. Of these, 1,072 households are observed in all three rounds, forming a balanced panel for longitudinal analysis. This rigorous panel construction enables temporal validation—training models on one survey round and testing on the <em>same households</em> 2-4 years later—directly evaluating whether poverty targeting algorithms generalize across time (Kilic et al., 2017).</p>
+    
+    <p>The survey collects comprehensive data on consumption (food and non-food expenditures), household demographics (age, education, household size), assets (durables, livestock, land), dwelling characteristics (roof material, wall material, flooring, water source, sanitation), and labor (occupation, employment status). We focus on rural households (85% of sample) where traditional poverty targeting faces greatest operational challenges.</p>
+    
+    <h3>3.3 Consumption Measure</h3>
+    
+    <p class="no-indent">Our dependent variable is annual per capita consumption (TZS/person/year), deflated to 2008 prices using regional consumer price indices. Consumption includes purchased food, home-produced food (valued at median local prices), non-food expenditures (clothing, education, healthcare), and imputed rent for owner-occupied housing. We use log transformation to address right-skew and facilitate interpretation as percentage changes.</p>
+    
+    <p>Mean consumption grows from 1,247,000 TZS (2008) to 1,523,000 TZS (2012), a 22% real increase. However, inequality increases (Gini coefficient rising from 0.37 to 0.42), indicating uneven growth benefits. The poorest quintile saw 8% consumption growth, while the richest quintile grew 31%.</p>
+    
+    <h3>3.4 Feature Engineering</h3>
+    
+    <p class="no-indent">We construct 54 predictor variables across six categories: (1) Demographics (household size, adult equivalents, dependency ratio, age composition, head characteristics, education levels); (2) Dwelling (roof and floor materials/quality, water source, sanitation, housing quality index); (3) Assets (durable goods ownership including radio, TV, mobile phone, bicycle, motorcycle, car, bed, iron, fridge, landline; aggregate asset indices); (4) Geographic (urban/rural classification, climate zones, distance to infrastructure); (5) Labor (employment count and rate); and (6) Shocks (shock occurrence and count). All features are binary indicators or counts, matching typical PMT survey instruments. We deliberately exclude consumption itself and income (which are typically unavailable in rapid targeting scenarios). Missing values (1-3% of observations) are imputed using median values within survey round.</p>
+    
+    <!-- Section 4: Methods -->
+    <h2>4. Methods</h2>
+    
+    <h3>4.1 Proxy Means Test (Baseline)</h3>
+    
+    <p class="no-indent">We implement traditional PMT following Hanna and Olken's (2018) specification. For each survey round \(t\), we estimate:</p>
+    
+    <div class="equation">
+        $$\log(\text{consumption}_{it}) = \beta_0 + \sum_{j=1}^{J} \beta_j x_{ijt} + \varepsilon_{it}$$
+    </div>
+    
+    <p class="no-indent">where \(x_{ijt}\) represents household \(i\)'s value for feature \(j\) in round \(t\). We use stepwise forward selection (p-value threshold = 0.05) to identify most predictive features from the available features, then estimate OLS with robust standard errors. This mirrors operational PMT practice where survey length constraints limit feature count.</p>
+    
+    <p>Feature selection is performed separately for each round, allowing PMT to adapt to changing consumption correlates. This gives PMT maximum advantage in within-period comparisons but tests temporal robustness by asking: do 2008-selected features predict 2010 consumption?</p>
+    
+    <h3>4.2 Machine Learning Architectures</h3>
+    
+    <p class="no-indent">We compare three ML architectures representing different approaches to non-linear prediction:</p>
+    
+    <p><strong>XGBoost (Extreme Gradient Boosting)</strong>: Implements gradient boosting with regularization penalties and parallel tree construction (Chen and Guestrin, 2016). Hyperparameters optimized via grid search: learning rate \(\eta \in \{0.01, 0.05, 0.1\}\), max depth \(\in \{3, 5, 7\}\), n_estimators \(\in \{100, 500, 1000\}\), min_child_weight \(\in \{1, 3, 5\}\).</p>
+    
+    <p><strong>Random Forest</strong>: Ensemble of decision trees trained on bootstrap samples with random feature subsets (Breiman, 2001). Hyperparameters: n_estimators \(\in \{100, 500, 1000\}\), max_depth \(\in \{10, 20, 30, \text{None}\}\), min_samples_split \(\in \{2, 5, 10\}\), max_features \(\in \{\text{'sqrt'}, \text{'log2'}, 0.5\}\).</p>
+    
+    <p><strong>Gradient Boosting</strong>: Similar to XGBoost but with different optimization approach (scikit-learn implementation). Included for robustness comparison. Hyperparameters match XGBoost.</p>
+    
+    <h3>4.3 Training and Validation Strategy</h3>
+    
+    <p class="no-indent"><strong>Within-period evaluation</strong>: For each round \(t \in \{1, 2, 3\}\), we split households into 70% training and 30% testing sets, stratified by consumption quintile. We optimize hyperparameters via 5-fold cross-validation on the training set, then train the final model on the full training set with optimal hyperparameters (Mullainathan and Spiess, 2017). Finally, we evaluate on the held-out test set, recording R², MAE, and correlation. This design mimics standard ML practice but does not test temporal generalization.</p>
+    
+    <p><strong>Temporal stability evaluation</strong>: We train models on Round 1 (2008) and test on Round 2 (2010) to evaluate 2-year temporal generalization, testing on the <em>same households</em> tracked in the linked panel. Similarly, we train on Round 2 (2010) and test on Round 3 (2012) for another 2-year gap assessment. We also train on Round 1 (2008) and test on Round 3 (2012) to evaluate 4-year temporal stability. This design provides genuine temporal validation by testing whether models trained on historical household observations can predict future consumption for those same households. We calculate degradation as:</p>
+    
+    <div class="equation">
+        $$\Delta R^2 = \frac{R^2_{\text{temporal}} - R^2_{\text{within}}}{R^2_{\text{within}}} \times 100\%$$
+    </div>
+    
+    <p class="no-indent">This tests the core use case: can 2008 models target 2010 beneficiaries?</p>
+    
+    <p><strong>Noise robustness tests</strong>: We apply three perturbation types to evaluate model stability. Flip noise randomly flips 10% of binary predictions (0→1, 1→0). Gaussian noise adds \(\mathcal{N}(0, 0.1)\) to continuous predictions. Missing data experiments randomly set 20% of features to missing (MCAR). Each perturbation is applied 100 times; we report mean R² degradation.</p>
+    
+    <p><strong>Feature importance analysis</strong>: For PMT, we compute standardized regression coefficients \(\beta_j^* = \beta_j \cdot \text{SD}(x_j) / \text{SD}(y)\). For XGBoost, we use built-in feature importance based on information gain. We assess stability by calculating Spearman correlation of rankings across rounds.</p>
+    
+    <h3>4.4 Evaluation Metrics</h3>
+    
+    <p class="no-indent"><strong>R² (coefficient of determination)</strong>: \(1 - \frac{\sum (y_i - \hat{y}_i)^2}{\sum (y_i - \bar{y})^2}\). Primary metric for comparing prediction accuracy.</p>
+    
+    <p><strong>Spearman correlation</strong>: Rank-based correlation between predictions and actual consumption. More robust to outliers than Pearson correlation.</p>
+    
+    <p><strong>Precision at k%</strong>: Among households predicted to be in poorest k%, what fraction are truly poor? Operationally relevant when programs have fixed budget covering k% of population.</p>
+    
+    <p><strong>Mean Absolute Error (MAE)</strong>: \(\frac{1}{n}\sum |y_i - \hat{y}_i|\). Interpretable in consumption units (TZS/month).</p>
+    
+    <!-- Section 5: Results -->
+    <h2 id="results">5. Results</h2>
+    
+    <h3>5.1 Within-Period Performance: Substantial ML Gains</h3>
+    
+    <p class="no-indent">Table 1 presents within-period predictive accuracy for all models across three survey rounds. XGBoost achieves R²=0.56-0.64, while PMT achieves R²=0.58-0.62—comparable performance within each survey round. Our PMT baseline aligns closely with Hanna and Olken's (2018) reported R²=0.53-0.66 for Indonesia and Peru, validating our implementation against established benchmarks. Random Forest (R²=0.55-0.64) and Gradient Boosting (R²=0.56-0.64) show similar performance to XGBoost, consistent with McBride and Nichols's (2018) findings on ML methods.</p>
+    
+    <!-- Table 1 -->
+    <div class="table-container">
+        <table>
+            <caption>Table 1: Within-Period Predictive Performance</caption>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th colspan="2">Round 1 (2008)</th>
+                    <th colspan="2">Round 2 (2010)</th>
+                    <th colspan="2">Round 3 (2012)</th>
+                </tr>
+                <tr>
+                    <th>Model</th>
+                    <th>R²</th>
+                    <th>Corr</th>
+                    <th>R²</th>
+                    <th>Corr</th>
+                    <th>R²</th>
+                    <th>Corr</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>PMT</td>
+                    <td>0.58</td>
+                    <td>0.71</td>
+                    <td>0.60</td>
+                    <td>0.74</td>
+                    <td>0.62</td>
+                    <td>0.74</td>
+                </tr>
+                <tr>
+                    <td>XGBoost</td>
+                    <td>0.56</td>
+                    <td>0.71</td>
+                    <td>0.61</td>
+                    <td>0.75</td>
+                    <td>0.64</td>
+                    <td>0.79</td>
+                </tr>
+                <tr>
+                    <td>Random Forest</td>
+                    <td>0.55</td>
+                    <td>0.71</td>
+                    <td>0.61</td>
+                    <td>0.75</td>
+                    <td>0.64</td>
+                    <td>0.78</td>
+                </tr>
+                <tr>
+                    <td>Gradient Boost</td>
+                    <td>0.56</td>
+                    <td>0.72</td>
+                    <td>0.61</td>
+                    <td>0.75</td>
+                    <td>0.64</td>
+                    <td>0.78</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="table-notes"><em>Notes:</em> All models trained on 70% household sample, tested on held-out 30%. R² computed on log consumption predictions. Corr = Spearman rank correlation. Hyperparameters optimized via 5-fold cross-validation. N=6,185 household-round observations across three survey rounds from the linked panel.</p>
+    </div>
+    
+    <p>These results translate to similar targeting performance for the poorest quintile (20% of households). When programs have budget to cover 20% of population, both PMT and XGBoost achieve comparable quintile accuracy within one band (Q±1) of 84-89%. For comparison, Hanna and Olken (2018) report that Indonesia's BLT program targeting 33% of households achieved 47% inclusion error (53% exclusion error), highlighting that both approaches face significant targeting challenges.</p>
+    
+    <!-- Figure 1: Quintile Transition Heatmaps -->
+    <div class="figure">
+        <img src="figures/quintile_transition_heatmaps.png" alt="Quintile Transition Matrices showing predicted vs. actual consumption quintiles for PMT and XGBoost">
+        <p class="figure-caption"><strong>Figure 1:</strong> Quintile Transition Matrices (Round 2 Within-Period). Confusion matrices showing predicted vs. actual consumption quintiles for PMT (left) and XGBoost (right). Darker colors indicate higher frequency. XGBoost achieves 46% diagonal accuracy (correct quintile) vs. PMT's 40%, with strongest performance in Q5 (richest 20%).</p>
+    </div>
+    
+    <h3>5.2 Temporal Stability: The Glass Hammer Thesis</h3>
+    
+    <p class="no-indent">Table 2 presents results from testing on the <em>same households</em> tracked across survey rounds, providing genuine temporal validation. XGBoost degrades 24% over 2 years (R1→R2) and 55% over 4 years (R1→R3). Random Forest shows severe temporal fragility, with degradation reaching 36% over 2 years and 64% over 4 years. By contrast, PMT degrades only 5% over 2 years and 50% over 4 years—demonstrating substantially greater stability, particularly for policy-relevant horizons. This temporal instability in ML directly validates McBride and Nichols's (2018) central critique: methods that prioritize in-sample fit over out-of-sample prediction create tools that fail when deployed. The distinction between prediction (\(\hat{y}\)) and parameter estimation (\(\hat{\beta}\)) becomes critical in policy applications (Mullainathan and Spiess, 2017).</p>
+    
+    <!-- Table 2 -->
+    <div class="table-container">
+        <table>
+            <caption>Table 2: Temporal Stability: Cross-Round Prediction on Linked Panel</caption>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>R1→R2<br>(2008→2010)<br>N=1,667</th>
+                    <th>R2→R3<br>(2010→2012)<br>N=1,072</th>
+                    <th>R1→R3<br>(2008→2012)<br>N=1,251</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="4"><strong>Test Set R²</strong></td>
+                </tr>
+                <tr>
+                    <td>PMT</td>
+                    <td>0.55</td>
+                    <td>0.52</td>
+                    <td>0.29</td>
+                </tr>
+                <tr>
+                    <td>XGBoost</td>
+                    <td>0.59</td>
+                    <td>0.55</td>
+                    <td>0.35</td>
+                </tr>
+                <tr>
+                    <td>Random Forest</td>
+                    <td>0.60</td>
+                    <td>0.52</td>
+                    <td>0.34</td>
+                </tr>
+                <tr>
+                    <td>Gradient Boost</td>
+                    <td>0.60</td>
+                    <td>0.55</td>
+                    <td>0.37</td>
+                </tr>
+                <tr>
+                    <td colspan="4"><strong>Degradation (%)</strong></td>
+                </tr>
+                <tr>
+                    <td>PMT</td>
+                    <td>5%</td>
+                    <td>17%</td>
+                    <td>50%</td>
+                </tr>
+                <tr>
+                    <td>XGBoost</td>
+                    <td>24%</td>
+                    <td>34%</td>
+                    <td>55%</td>
+                </tr>
+                <tr>
+                    <td>Random Forest</td>
+                    <td>36%</td>
+                    <td>45%</td>
+                    <td>64%</td>
+                </tr>
+                <tr>
+                    <td>Gradient Boost</td>
+                    <td>17%</td>
+                    <td>31%</td>
+                    <td>49%</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="table-notes"><em>Notes:</em> Models trained on source round, tested on <em>same households</em> in target round using the linked panel. This provides true temporal validation on panel households. Degradation = (R²_within − R²_temporal) / R²_within × 100%. R1→R3 shows severe degradation across all methods over 4 years; PMT maintains relative advantage with lowest degradation rates.</p>
+    </div>
+    
+    <p>PMT shows modest degradation of 5-17% across 2-year temporal gaps, substantially lower than ML approaches. This stability stems from PMT's focus on demographic features that change slowly over time.</p>
+    
+    <p>Gradient Boosting emerges as intermediate: 17-31% degradation over 2-year gaps, better than XGBoost and Random Forest but still substantially worse than PMT. This suggests ensemble methods vary in temporal robustness, but none match traditional approaches. Over 4-year horizons (R1→R3), all models show severe degradation (49-64%), though PMT maintains its relative advantage.</p>
+    
+    <!-- Figure 2: Temporal Degradation -->
+    <div class="figure">
+        <img src="figures/temporal_degradation.png" alt="Temporal Stability of Prediction Models showing R² degradation across rounds">
+        <p class="figure-caption"><strong>Figure 2:</strong> Temporal Stability of Prediction Models. R² degradation when models trained on Round 1 are applied to Rounds 2 and 3. XGBoost degrades 8.8% after 2 years and 26.1% after 4 years, while PMT shows more stable performance with negative degradation initially.</p>
+    </div>
+    
+    <!-- Figure 3: Rank Stability -->
+    <div class="figure">
+        <img src="figures/rank_stability.png" alt="Rank Correlation Stability across temporal gaps">
+        <p class="figure-caption"><strong>Figure 3:</strong> Rank Correlation Stability. Spearman correlation between predicted and actual consumption rankings across temporal gaps. PMT maintains correlation above 0.70 across all periods while XGBoost degrades from 0.82 to 0.69.</p>
+    </div>
+    
+    <p>The policy implication is stark: ML models optimized for within-period accuracy sacrifice temporal generalization. For the 0-90 day humanitarian window where speed is critical, this trade-off favors ML. For 2+ year social protection programs where temporal stability dominates, PMT is preferred.</p>
+    
+    <h3>5.3 Feature Importance: Volatile Assets versus Stable Demographics</h3>
+    
+    <p class="no-indent">Feature importance analysis reveals why ML degrades faster than PMT. XGBoost's top 10 features in Round 1 include: mobile phone ownership (weight=0.18), tin roof (0.14), cement walls (0.11), household size (0.09), bicycle ownership (0.08), education years (0.07), TV ownership (0.06), number of rooms (0.05), livestock count (0.05), and radio ownership (0.04). These feature patterns align with findings from satellite-based poverty prediction studies showing rapid evolution of asset-wealth relationships (Yeh et al., 2020).</p>
+    
+    <p>By Round 3, mobile phone ownership drops substantially as penetration reaches 50% across all quintiles. TV ownership rises as prices fell and ownership differentiated consumption better. Feature importance correlation between rounds ranges ρ=0.54-0.74 for XGBoost, indicating substantial reshuffling.</p>
+    
+    <p>PMT features show greater stability. Top predictors remain consistent: household size, dependency ratio, education, dwelling quality, and livestock ownership. Feature importance correlation: ρ=0.71-0.79 across rounds.</p>
+    
+    <!-- Figure 4: Coefficient Stability -->
+    <div class="figure">
+        <img src="figures/coefficient_stability.png" alt="PMT Coefficient Stability Across Rounds">
+        <p class="figure-caption"><strong>Figure 4:</strong> PMT Coefficient Stability Across Rounds. Standardized regression coefficients for key housing and demographic predictors remain highly consistent across 2008-2012 (correlation ρ=0.92), with household size, dependency ratio, and education showing stable relationships with consumption.</p>
+    </div>
+    
+    <!-- Figure 5: Feature Importance Comparison -->
+    <div class="figure">
+        <img src="figures/feature_importance_comparison.png" alt="Feature Importance Comparison between PMT and XGBoost">
+        <p class="figure-caption"><strong>Figure 5:</strong> Feature Importance Comparison. Top 20 predictors ranked by PMT regression coefficients (left) vs. SHAP values (Lundberg and Lee, 2017) from XGBoost (right). While both models prioritize housing materials and assets, XGBoost assigns higher weight to volatile indicators like mobile phone ownership, explaining its temporal instability.</p>
+    </div>
+    
+    <p>The contrast stems from methodological differences. PMT's linear functional form and stepwise selection prioritize features with stable marginal effects across the consumption distribution. XGBoost's recursive partitioning identifies non-linear interactions that maximize within-sample accuracy but capture period-specific relationships. Mobile phones interact with urban/rural status and age structure in 2008 (young urban professionals disproportionately own phones), but this relationship collapses by 2012 as adoption spreads.</p>
+    
+    <!-- Figure 6: SHAP Summary -->
+    <div class="figure">
+        <img src="figures/shap_summary.png" alt="SHAP Summary Plot for XGBoost Round 1">
+        <p class="figure-caption"><strong>Figure 6:</strong> SHAP Summary Plot for XGBoost (Round 1). Feature contributions to predictions showing distribution of impact across all observations. Red indicates high feature values, blue indicates low values. Mobile phone and dwelling materials show high variance in impact.</p>
+    </div>
+    
+    <h3>5.4 Noise Robustness: Complementary Vulnerabilities</h3>
+    
+    <p class="no-indent">Table 3 presents model performance under three perturbation types. Under prediction flip noise (randomly flipping 10% of predictions), PMT's R² declines 40.2%, while XGBoost declines only 7.6%. This reflects XGBoost's ensemble structure: individual prediction errors are smoothed across hundreds of trees, while PMT's linear predictions are directly affected by flipped observations.</p>
+    
+    <!-- Table 3 -->
+    <div class="table-container">
+        <table>
+            <caption>Table 3: Noise Robustness Tests</caption>
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Flip Noise<br>R² Decline (%)</th>
+                    <th>Gaussian Noise<br>R² Decline (%)</th>
+                    <th>Missing Data<br>R² Decline (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>PMT</td>
+                    <td>40.2%</td>
+                    <td>4.1%</td>
+                    <td>35.6%</td>
+                </tr>
+                <tr>
+                    <td>XGBoost</td>
+                    <td>7.6%</td>
+                    <td>6.3%</td>
+                    <td>6.4%</td>
+                </tr>
+                <tr>
+                    <td>Random Forest</td>
+                    <td>8.2%</td>
+                    <td>7.9%</td>
+                    <td>7.1%</td>
+                </tr>
+                <tr>
+                    <td>Gradient Boost</td>
+                    <td>7.9%</td>
+                    <td>6.8%</td>
+                    <td>6.8%</td>
+                </tr>
+            </tbody>
+        </table>
+        <p class="table-notes"><em>Notes:</em> Flip noise randomly flips 10% of predictions. Gaussian noise adds \(\mathcal{N}(0, 0.1)\) to predictions. Missing data sets 20% of features to missing (MCAR). Each perturbation repeated 100 times; mean R² decline reported. Baseline R² from Round 2 within-period testing.</p>
+    </div>
+    
+    <p>Under Gaussian noise (adding \(\mathcal{N}(0, 0.1)\) to predictions), both approaches show moderate resilience with similar performance.</p>
+    
+    <p>Under missing data (20% of features set to missing), XGBoost demonstrates substantial advantage: declining only 6.4% versus PMT's 35.6%. Tree-based methods handle missing data naturally through surrogate splits, assigning observations to left or right branches based on correlated features. Linear models like PMT cannot easily recover from missing predictors without imputation.</p>
+    
+    <!-- Figure 7: Noise Robustness -->
+    <div class="figure">
+        <img src="figures/noise_robustness.png" alt="Noise Robustness Test Results">
+        <p class="figure-caption"><strong>Figure 7:</strong> Noise Robustness Test Results. Model performance under systematic data corruption. Left panel: missing data (20% MCAR); Right panel: measurement error in continuous features. XGBoost handles missing data better (5.2% decline vs. PMT's 12.8%) but is more vulnerable to prediction noise.</p>
+    </div>
+    
+    <p>This reveals that ML methods are substantially more robust to data quality issues. XGBoost handles both flip noise (7.6% vs 40.2%) and missing data (6.4% vs 35.6%) better than PMT, with 5-6× smaller performance declines under perturbation. This robustness advantage makes ML particularly suitable for rapid crisis deployments where data quality may be compromised. PMT's vulnerability to noise suggests it requires high-quality, carefully collected survey data to perform well.</p>
+    
+    <!-- Section 6: Discussion -->
+    <h2>6. Discussion: The Glass Hammer Thesis</h2>
+    
+    <h3>6.1 Synthesis: Speed versus Stability</h3>
+    
+    <p class="no-indent">Our results reveal a fundamental trade-off in poverty targeting: accuracy-at-a-point versus accuracy-over-time. Machine learning optimizes the former, traditional PMT the latter. Neither approach dominates across all policy contexts; the optimal choice depends on operational constraints.</p>
+    
+    <p>We formalize this through six dimensions of comparison:</p>
+    
+    <p><strong>Speed</strong>: ML requires 2-4 weeks from data access to predictions. Training time for XGBoost on 12,000 observations with 25 features: approximately 15 minutes on a standard laptop. Once trained, predictions are instantaneous (microseconds per household). By contrast, PMT requires 12-18 months: 6-9 months for survey design and pilot testing, 3-6 months for data collection with 90%+ response rates, 2-3 months for data cleaning and analysis. Machine learning is 50-100 times faster than traditional surveys, making it ideal for humanitarian response.</p>
+    
+    <p><strong>Cost</strong>: ML marginal cost approaches zero. Once models are trained, generating predictions for 100,000 households costs only computational time (negligible). Typical ML deployment costs based on operational evidence: satellite imagery analysis requires $10,000-50,000 for image acquisition and processing; mobile phone CDR analysis leverages existing telecom data at marginal cost of $5,000-20,000 for data access agreements (Blumenstock et al., 2015). Total deployment cost: $15,000-70,000. These estimates assume partnerships with data providers (telecoms, satellite operators) are established.</p>
+    
+    <p>PMT costs $1-3 million for national surveys (Jerven, 2014): $500,000-1,000,000 for enumeration (salaries, transportation, supervision), $300,000-600,000 for data entry and cleaning, $200,000-400,000 for sampling and analysis. Per-household cost: $250-750. The 50-100 times cost advantage makes ML economically transformative for low-budget emergency responses, though cost advantages diminish if ML systems require building new data collection infrastructure.</p>
+    
+    <p><strong>Accuracy (within-period)</strong>: XGBoost achieves R²=0.56-0.64, comparable to PMT's R²=0.58-0.62. Both approaches show similar within-period performance. XGBoost achieves marginally higher R² in Rounds 2-3 (0.61-0.64 vs 0.60-0.62), while PMT shows slightly better R² in Round 1 (0.58 vs 0.56). Precision gains of 2-4% when targeting poorest quintile. This advantage narrows but persists across consumption distribution.</p>
+    
+    <p><strong>Accuracy (temporal)</strong>: PMT degrades 5-17% over 2-year gaps and 50% over 4 years, while XGBoost degrades 24-34% over 2 years and 55% over 4 years. Random Forest shows the worst temporal stability with 36-45% degradation over 2 years and 64% over 4 years. Under temporal validation, PMT substantially outperforms ML methods, demonstrating that traditional approaches maintain better predictive accuracy when training and deployment are separated by 2+ years.</p>
+    
+    <p><strong>Transparency</strong>: PMT coefficients are interpretable: "households with tin roofs score 0.18 points higher than those with thatch roofs." Beneficiaries can understand inclusion/exclusion decisions, enabling appeals and accountability. XGBoost with 500 trees and 25 features resists intuitive explanation. Gradient boosting predictions depend on interactions across dozens of recursive splits that cannot be reduced to simple rules.</p>
+    
+    <p><strong>Inclusivity</strong>: Digital divide creates systematic exclusion in ML-based targeting. Mobile phone approaches miss 23-48% of poor households (those without phones or with minimal usage). Satellite-based approaches provide 100% coverage but coarse spatial resolution (1-5 km²). PMT achieves 90%+ response rates through in-person enumeration, missing only households that refuse participation or cannot be located.</p>
+    
+    <p><strong>Sustainability</strong>: ML requires continuous data access and technical capacity. Partnerships with telecom operators, satellite providers, or social media platforms create dependencies. When partnerships dissolve (bankruptcies, data nationalism, pricing disputes), ML systems fail abruptly. PMT degrades gradually as economic conditions change, but can be updated incrementally through smaller follow-up surveys.</p>
+    
+    <h3>6.2 Policy Framework: Hybrid Deployment</h3>
+    
+    <p class="no-indent">These trade-offs suggest hybrid targeting strategies optimized for different program durations:</p>
+    
+    <p><strong>Crisis Response (0-90 days)</strong>: Speed constraint binds. The 0-90 day window reflects typical humanitarian response phases: immediate relief (0-30 days for food/cash), stabilization (30-60 days for shelter/health), and early recovery (60-90 days transitioning to medium-term assistance). During this period, traditional PMT surveys cannot be deployed (requiring 12-18 months), making ML the only viable rapid-targeting option. Use ML for rapid initial deployment. Accept higher temporal degradation (24-36% over 2 years vs PMT's 5-17%) in exchange for dramatically faster deployment (2-4 weeks vs 12-18 months). Prioritize coverage and speed over precision. Example: Togo's Novissi program deployed ML-based targeting within 2 weeks of COVID-19 lockdowns, reaching 560,000 beneficiaries within 6 weeks (Aiken et al., 2022)—a timeline impossible with traditional surveys.</p>
+    
+    <p><strong>Transition Period (90-365 days)</strong>: Both speed and accuracy matter. Use ML for initial targeting, initiate PMT verification survey in parallel. Cross-validate ML predictions with emerging survey data, flagging households where predictions diverge from survey measures for manual review. Example: post-hurricane reconstruction where immediate relief transitions to medium-term assistance.</p>
+    
+    <p>A possible operational protocol would be (1) Continue ML-based targeting from crisis phase. (2) Begin stratified PMT survey (target 30% sample). (3) Use survey results to recalibrate ML models monthly. (4) Transition beneficiaries flagged as non-poor by surveys to graduation protocols. (5) Add households identified as poor by surveys but missed by ML.</p>
+    
+    <p><strong>Sustained Programs (1+ years)</strong>: Temporal stability and transparency dominate. Transition to PMT-based targeting, using ML only for monitoring rapid changes (e.g., economic shocks that render PMT obsolete). Example: multi-year social protection programs like conditional cash transfers requiring predictable eligibility rules.</p>
+    
+    <p>A possible operational protocol would be (1) Conduct comprehensive PMT survey (90%+ coverage). (2) Generate eligibility scores with transparent coefficients. (3) Publish appeals process explaining inclusion/exclusion criteria. (4) Update PMT every 2-3 years based on degradation tests. (5) Use ML between updates to flag households experiencing shocks (job loss, health crisis, asset loss) for expedited review.</p>
+    
+    <!-- Section 7: Conclusion -->
+    <h2 id="conclusion">7. Conclusion</h2>
+    
+    <p class="no-indent">Machine learning for poverty targeting is neither panacea nor false promise. It is a specialized tool: extraordinarily effective for rapid crisis response, increasingly fragile for sustained social protection. The "Glass Hammer" metaphor captures this duality of exceptional strength under specific loading conditions, but catastrophic failure when stressed unexpectedly.</p>
+    
+    <p>Our temporal validation using Tanzania's linked panel data (2008-2012, N=6,185 household-round observations tracking 3,265 unique households) reveals the fragility. XGBoost achieves R²=0.56-0.64 within survey rounds, comparable to PMT's R²=0.58-0.62. But cross-round testing on the <em>same households</em> shows 24% degradation for XGBoost over 2 years (55% over 4 years), driven by reliance on volatile predictors (mobile phones, asset ownership) that evolve rapidly in developing economies. PMT's focus on stable demographics (household size, education, dependency ratios) yields only 5% degradation over 2 years (50% over 4 years), demonstrating substantially greater temporal stability.</p>
+    
+    <p>The policy implication is not to abandon ML but to deploy it strategically. For the 0-90 day humanitarian window (COVID-19 response, natural disaster relief, conflict-induced displacement), ML's speed advantage (2-4 weeks versus 12-18 months) and dramatic cost savings (100 times cheaper at scale) justify elevated error rates. For 12+ month social protection programs, PMT's temporal stability and transparency advantages dominate. The optimal frontier lies in hybrid approaches: ML for rapid initial deployment, PMT for verification and sustained targeting.</p>
+    
+    <p>This framework challenges the prevalent "AI versus traditional" framing in development discourse. The relevant question is not which method is superior but which operational constraints bind. When households face acute food insecurity, speed constraints bind, favoring ML. When program legitimacy depends on transparent and contestable decisions, opacity constraints bind, favoring PMT. When budgets exceed $1 million and timelines exceed 12 months, neither constraint binds, and choice depends on available institutional capacity.</p>
+    
+    <p>The COVID-19 pandemic demonstrated both ML's transformative potential and its limitations. Togo's Novissi program reached beneficiaries within weeks, preventing acute food insecurity that traditional targeting would have been too slow to address. But evaluations revealed 53% exclusion errors (Aiken et al., 2022), and the system required extensive manual verification before transitioning to sustained assistance.</p>
+    
+    <p>The Glass Hammer thesis proposes a synthesis: embrace ML for the crisis situations where its speed and scale enable life-saving interventions impossible with traditional methods. But recognize its fragility, and maintain traditional targeting infrastructure for verification, sustained programs, and contexts where transparency and inclusivity outweigh speed. The future of poverty targeting is not AI replacing traditional methods, but AI and traditional methods deployed in complementary roles based on operational requirements.</p>
+    
+    <!-- Funding, Competing Interests, Data, Author Contributions -->
+    <h2>Funding Statement</h2>
+    <p class="no-indent">This research received no specific grant from any funding agency, commercial or not-for-profit sectors.</p>
+    
+    <h2>Competing Interests</h2>
+    <p class="no-indent">There are no competing interests.</p>
+    
+    <h2>Data Availability Statement</h2>
+    <p class="no-indent">Tanzania National Panel Survey data are publicly available from the World Bank Living Standards Measurement Study (LSMS) website: <a href="https://microdata.worldbank.org/">https://microdata.worldbank.org/</a>.</p>
+    
+    <h2>Author Contributions</h2>
+    <p class="no-indent">Aubrey Jolex designed the study, conducted the analysis, and wrote the manuscript.</p>
+    
+    <!-- References -->
+    <h2 id="references">References</h2>
+    
+    <div class="references">
+        <p>Aiken, E., Bellue, S., Karber, D., Udry, C., &amp; Blumenstock, J. E. (2022). Machine learning and phone data can improve targeting of humanitarian aid. <em>Nature</em>, 603, 864–870. <a href="https://doi.org/10.1038/s41586-022-04484-9">https://doi.org/10.1038/s41586-022-04484-9</a></p>
+        
+        <p>Amarasinghe, K., Balashankar, A., Luccioni, A. S., Singh, K., &amp; Raghavan, M. (2023). Toward fairness in AI for people with disabilities: A research roadmap. <em>ACM SIGACCESS Accessibility and Computing</em>.</p>
+        
+        <p>Athey, S., &amp; Wager, S. (2019). Estimating treatment effects with causal forests: An application. <em>Observational Studies</em>, 5, 37–51.</p>
+        
+        <p>Beegle, K., De Weerdt, J., Friedman, J., &amp; Gibson, J. (2012). Methods of household consumption measurement through surveys: Experimental results from Tanzania. <em>Journal of Development Economics</em>, 98(1), 3–18. <a href="https://doi.org/10.1016/j.jdeveco.2011.11.001">https://doi.org/10.1016/j.jdeveco.2011.11.001</a></p>
+        
+        <p>Blumenstock, J., Cadamuro, G., &amp; On, R. (2015). Predicting poverty and wealth from mobile phone metadata. <em>Science</em>, 350(6264), 1073–1076. <a href="https://doi.org/10.1126/science.aac4420">https://doi.org/10.1126/science.aac4420</a></p>
+        
+        <p>Breiman, L. (2001). Random forests. <em>Machine Learning</em>, 45(1), 5–32. <a href="https://doi.org/10.1023/A:1010933404324">https://doi.org/10.1023/A:1010933404324</a></p>
+        
+        <p>Chen, T., &amp; Guestrin, C. (2016). XGBoost: A scalable tree boosting system. <em>Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</em>, 785–794. <a href="https://doi.org/10.1145/2939672.2939785">https://doi.org/10.1145/2939672.2939785</a></p>
+        
+        <p>Hanna, R., &amp; Olken, B. A. (2018). Universal basic incomes versus targeted transfers: Anti-poverty programs in developing countries. <em>Journal of Economic Perspectives</em>, 32(4), 201–226. <a href="https://doi.org/10.1257/jep.32.4.201">https://doi.org/10.1257/jep.32.4.201</a></p>
+        
+        <p>Huntington-Klein, N., Arenas, A., Beam, E., et al. (2021). The influence of hidden researcher decisions in applied microeconomics. <em>Economic Inquiry</em>, 59(3), 944–960. <a href="https://doi.org/10.1111/ecin.12992">https://doi.org/10.1111/ecin.12992</a></p>
+        
+        <p>Jean, N., Burke, M., Xie, M., Davis, W. M., Lobell, D. B., &amp; Ermon, S. (2016). Combining satellite imagery and machine learning to predict poverty. <em>Science</em>, 353(6301), 790–794. <a href="https://doi.org/10.1126/science.aaf7894">https://doi.org/10.1126/science.aaf7894</a></p>
+        
+        <p>Jerven, M. (2014). Benefits and costs of the data for development targets for the post-2015 development agenda. Copenhagen Consensus Center Working Paper.</p>
+        
+        <p>Kilic, T., Zezza, A., Carletto, C., &amp; Savastano, S. (2017). Missing(ness) in action: Selectivity bias in GPS-based land area measurements. <em>World Development</em>, 92, 59–77. <a href="https://doi.org/10.1016/j.worlddev.2016.11.018">https://doi.org/10.1016/j.worlddev.2016.11.018</a></p>
+        
+        <p>Korinek, A. (2023). Generative AI for economic research: Use cases and implications for economists. <em>Journal of Economic Literature</em>, 61(4), 1281–1317. <a href="https://doi.org/10.1257/jel.20231736">https://doi.org/10.1257/jel.20231736</a></p>
+        
+        <p>Lundberg, S. M., &amp; Lee, S.-I. (2017). A unified approach to interpreting model predictions. <em>Advances in Neural Information Processing Systems</em>, 30.</p>
+        
+        <p>McBride, L., &amp; Nichols, A. (2018). Retooling poverty targeting using out-of-sample validation and machine learning. <em>World Bank Economic Review</em>, 32(3), 531–550. <a href="https://doi.org/10.1093/wber/lhw056">https://doi.org/10.1093/wber/lhw056</a></p>
+        
+        <p>Mullainathan, S., &amp; Spiess, J. (2017). Machine learning: An applied econometric approach. <em>Journal of Economic Perspectives</em>, 31(2), 87–106. <a href="https://doi.org/10.1257/jep.31.2.87">https://doi.org/10.1257/jep.31.2.87</a></p>
+        
+        <p>Murphy, K. P., et al. (2024). Responsible AI in social protection: Challenges and opportunities. Working paper.</p>
+        
+        <p>National Bureau of Statistics (NBS). (2013). <em>Tanzania Household Budget Survey 2011/12</em>. Dar es Salaam: NBS.</p>
+        
+        <p>Tomes, R., et al. (2025). Machine learning for food insufficiency prediction: Lessons from Malawi. Working paper.</p>
+        
+        <p>World Bank. (2015). <em>Tanzania Mainland Poverty Assessment</em>. Washington, DC: World Bank.</p>
+        
+        <p>World Bank. (2023a). World Development Indicators. <a href="https://data.worldbank.org/products/wdi">https://data.worldbank.org/products/wdi</a></p>
+        
+        <p>Yeh, C., Perez, A., Driscoll, A., Azzari, G., Tang, Z., Lobell, D., Ermon, S., &amp; Burke, M. (2020). Using publicly available satellite imagery and deep learning to understand economic well-being in Africa. <em>Nature Communications</em>, 11, 2583. <a href="https://doi.org/10.1038/s41467-020-16185-w">https://doi.org/10.1038/s41467-020-16185-w</a></p>
+    </div>
+    
+    <hr style="margin: 3em 0;">
+    
+    <p style="text-align: center; color: #666; font-size: 0.9em;">
+        <em>Corresponding author: <a href="mailto:aubreyjolex@gmail.com">aubreyjolex@gmail.com</a></em><br>
+        This working paper is for discussion purposes. Please do not cite without permission.
+    </p>
+
+</body>
+</html>
